@@ -92,21 +92,69 @@ function safeRemoveSession() {
   }
 }
 
-async function apiRequest(path, options = {}) {
-  const response = await fetch(path, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    },
-    ...options
-  });
+function getApiErrorMessage(data, response, rawBody) {
+  if (data?.mensagem) {
+    return data.mensagem;
+  }
 
-  const data = await response.json().catch(() => ({}));
+  if (data?.message) {
+    return data.message;
+  }
+
+  if (data?.error) {
+    return `${response.status}: ${data.error}`;
+  }
+
+  if (rawBody) {
+    return `Erro ${response.status}: ${rawBody.slice(0, 180)}`;
+  }
+
+  return `Erro ${response.status} ao comunicar com a API.`;
+}
+
+function buildApiUrl(path) {
+  return new URL(path, window.location.origin).toString();
+}
+
+async function apiRequest(path, options = {}) {
+  let response;
+
+  try {
+    response = await fetch(buildApiUrl(path), {
+      method: options.method || "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      },
+      body: options.body
+    });
+  } catch (error) {
+    throw new Error("Nao foi possivel conectar com a API. Verifique sua internet e tente novamente.");
+  }
+
+  const rawBody = await response.text();
+  let data = {};
+
+  if (rawBody) {
+    try {
+      data = JSON.parse(rawBody);
+    } catch (error) {
+      data = {};
+    }
+  }
+
   if (!response.ok) {
-    throw new Error(data.mensagem || "Não foi possível concluir a operação.");
+    throw new Error(getApiErrorMessage(data, response, rawBody));
   }
 
   return data;
+}
+
+function validateAuthResponse(auth) {
+  if (!auth?.perfil || !auth?.email || !auth?.nome) {
+    throw new Error("A API respondeu sem os dados de autenticacao esperados.");
+  }
 }
 
 function getInitials(name) {
@@ -157,8 +205,9 @@ function updateProfileView() {
 }
 
 function applyAuthState(auth, persistSession = true) {
+  validateAuthResponse(auth);
   currentUser = auth;
-  currentRole = auth.perfil;
+  currentRole = String(auth.perfil).toUpperCase();
   isAuthenticated = true;
   document.body.classList.remove("role-gerente", "role-atendente", "role-confeiteiro", "role-cliente");
   document.body.classList.add("authenticated", `role-${currentRole.toLowerCase()}`);
@@ -237,6 +286,18 @@ async function handleLogin(event) {
   }
 
   const loginData = new FormData(loginForm);
+  const payload = {
+    login: String(loginData.get("login") || "").trim(),
+    senha: String(loginData.get("senha") || ""),
+    perfil: String(loginData.get("perfil") || "").trim()
+  };
+
+  if (!payload.login || !payload.senha || !payload.perfil) {
+    setAuthFeedback("Preencha e-mail, senha e perfil para continuar.", "error");
+    showToast("Preencha e-mail, senha e perfil para continuar.");
+    return;
+  }
+
   setAuthFeedback("Verificando login...", "info");
   showToast("Verificando login...");
   loginButton.disabled = true;
@@ -245,11 +306,7 @@ async function handleLogin(event) {
   try {
     const auth = await apiRequest("/api/auth/login", {
       method: "POST",
-      body: JSON.stringify({
-        login: loginData.get("login"),
-        senha: loginData.get("senha"),
-        perfil: loginData.get("perfil")
-      })
+      body: JSON.stringify(payload)
     });
     applyAuthState(auth);
     setAuthFeedback("Login realizado com sucesso.", "success");
@@ -280,7 +337,23 @@ async function handleRegister(event) {
   }
 
   const registerData = new FormData(registerForm);
-  const codigoInterno = registerData.get("codigoInterno");
+  const codigoInterno = String(registerData.get("codigoInterno") || "").trim();
+  const payload = {
+    nome: String(registerData.get("nome") || "").trim(),
+    telefone: String(registerData.get("telefone") || "").trim(),
+    email: String(registerData.get("email") || "").trim(),
+    perfil: String(registerData.get("perfil") || "").trim(),
+    senha: String(registerData.get("senha") || ""),
+    confirmarSenha: String(registerData.get("confirmarSenha") || ""),
+    codigoInterno: codigoInterno || null
+  };
+
+  if (!payload.nome || !payload.telefone || !payload.email || !payload.perfil || !payload.senha || !payload.confirmarSenha) {
+    setAuthFeedback("Preencha todos os campos obrigatorios do cadastro.", "error");
+    showToast("Preencha todos os campos obrigatorios do cadastro.");
+    return;
+  }
+
   setAuthFeedback("Criando cadastro...", "info");
   showToast("Criando cadastro...");
   createAccountButton.disabled = true;
@@ -289,15 +362,7 @@ async function handleRegister(event) {
   try {
     const auth = await apiRequest("/api/auth/register", {
       method: "POST",
-      body: JSON.stringify({
-        nome: registerData.get("nome"),
-        telefone: registerData.get("telefone"),
-        email: registerData.get("email"),
-        perfil: registerData.get("perfil"),
-        senha: registerData.get("senha"),
-        confirmarSenha: registerData.get("confirmarSenha"),
-        codigoInterno: codigoInterno || null
-      })
+      body: JSON.stringify(payload)
     });
     registerForm.reset();
     toggleEmployeeField();

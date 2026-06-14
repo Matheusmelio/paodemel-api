@@ -2,6 +2,8 @@ package com.paodemel.api.common;
 
 import com.paodemel.api.auth.AccessDeniedException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -26,5 +28,23 @@ public class ApiExceptionHandler {
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ApiError handleValidationError(MethodArgumentNotValidException exception) {
     return new ApiError(HttpStatus.BAD_REQUEST.value(), "Dados invalidos. Preencha todos os campos obrigatorios corretamente.");
+  }
+
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ApiError handleUnreadableBody(HttpMessageNotReadableException exception) {
+    return new ApiError(HttpStatus.BAD_REQUEST.value(), "Corpo da requisicao invalido. Envie os dados em JSON.");
+  }
+
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+  public ApiError handleMethodNotAllowed(HttpRequestMethodNotSupportedException exception) {
+    return new ApiError(HttpStatus.METHOD_NOT_ALLOWED.value(), "Metodo HTTP nao permitido para esta rota.");
+  }
+
+  @ExceptionHandler(Exception.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public ApiError handleUnexpected(Exception exception) {
+    return new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Erro interno ao processar a solicitacao.");
   }
 }
