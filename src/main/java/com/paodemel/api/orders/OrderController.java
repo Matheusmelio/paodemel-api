@@ -1,6 +1,5 @@
 package com.paodemel.api.orders;
 
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,28 +11,40 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/encomendas")
 public class OrderController {
 
-  private final List<OrderDto> orders = new ArrayList<>(List.of(
-      new OrderDto("#PM-1048", "Ana Clara", "Chocolate", "Ninho com morango", "Hoje, 15:00", "Aguardando Producao"),
-      new OrderDto("#PM-1049", "Roberto Lima", "Baunilha", "Doce de leite", "Hoje, 17:30", "Em Producao"),
-      new OrderDto("#PM-1050", "Marina Souza", "Red velvet", "Cream cheese", "Amanha, 10:00", "Pronto")
-  ));
+  private final OrderRepository orderRepository;
+
+  public OrderController(OrderRepository orderRepository) {
+    this.orderRepository = orderRepository;
+  }
 
   @GetMapping
   public List<OrderDto> listar() {
-    return orders;
+    return orderRepository.findAll().stream()
+        .map(this::toDto)
+        .toList();
   }
 
   @PostMapping
   public OrderDto criar(@RequestBody OrderDto order) {
-    OrderDto created = new OrderDto(
-        "#PM-" + (1051 + orders.size()),
+    OrderEntity created = orderRepository.save(new OrderEntity(
+        "#PM-" + (1051 + orderRepository.count()),
         order.cliente(),
         order.massa(),
         order.recheio(),
         order.dataEntrega(),
         "Aguardando Producao"
+    ));
+    return toDto(created);
+  }
+
+  private OrderDto toDto(OrderEntity order) {
+    return new OrderDto(
+        order.getCodigo(),
+        order.getCliente(),
+        order.getMassa(),
+        order.getRecheio(),
+        order.getDataEntrega(),
+        order.getStatus()
     );
-    orders.add(created);
-    return created;
   }
 }

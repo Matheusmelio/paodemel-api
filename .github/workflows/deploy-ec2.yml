@@ -1,0 +1,44 @@
+name: Push-to-EC2
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  deploy:
+    name: Deploy API to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v4
+
+      - name: Copy files with SSH
+        uses: easingthemes/ssh-deploy@main
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+          ARGS: "-rltgoDzvO --delete"
+          SOURCE: "./"
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ secrets.TARGET_DIR }}
+          EXCLUDE: "/target/, /.git/, /.github/, **.env, global-bundle.pem"
+
+      - name: Build and restart API on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.TARGET_DIR }}"
+            export DATABASE_URL='${{ secrets.DATABASE_URL }}'
+            export DATABASE_USERNAME='${{ secrets.DATABASE_USERNAME }}'
+            export DATABASE_PASSWORD='${{ secrets.DATABASE_PASSWORD }}'
+            curl -fsSL https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o global-bundle.pem
+            mvn clean package -DskipTests
+            pkill -f 'paodemel-api' || true
+            nohup java -jar target/paodemel-api-0.0.1-SNAPSHOT.jar > app.log 2>&1 &

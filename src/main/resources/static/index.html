@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pão de Mel & Cia - SaaS de Gestão</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">PM</div>
+        <div>
+          <strong>Pão de Mel</strong>
+          <span>& Cia</span>
+        </div>
+      </div>
+
+      <nav class="nav-list" aria-label="Navegação principal">
+        <button class="nav-item active" data-screen="login"><span>Login</span></button>
+        <button class="nav-item" data-screen="register"><span>Cadastro</span></button>
+        <button class="nav-item" data-screen="dashboard"><span>Dashboard</span></button>
+        <button class="nav-item" data-screen="orders"><span>Encomendas</span></button>
+        <button class="nav-item" data-screen="new-order"><span>Nova Encomenda</span></button>
+        <button class="nav-item" data-screen="production"><span>Produção</span></button>
+        <button class="nav-item" data-screen="batches"><span>Fornadas</span></button>
+        <button class="nav-item" data-screen="stock"><span>Estoque</span></button>
+        <button class="nav-item" data-screen="pos"><span>Vendas Balcão</span></button>
+        <button class="nav-item" data-screen="reports"><span>Relatórios</span></button>
+        <button class="nav-item" data-screen="admin"><span>Administração</span></button>
+      </nav>
+
+      <div class="sidebar-card">
+        <span class="eyebrow">Operação ao vivo</span>
+        <strong>97% disponível</strong>
+        <p>Pedidos, estoque e fornadas sincronizados em tempo real.</p>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div>
+          <div class="breadcrumbs">Início / <span id="breadcrumb-current">Login</span></div>
+          <h1 id="screen-title">Login</h1>
+        </div>
+        <div class="topbar-actions">
+          <label class="search-box">
+            <span>⌕</span>
+            <input type="search" placeholder="Pesquisar pedido, cliente ou produto">
+          </label>
+          <button class="icon-button notification-button" aria-label="Notificações">
+            <span class="notification-dot"></span>
+            !
+          </button>
+          <button class="theme-toggle" id="theme-toggle" type="button">Dark mode</button>
+          <button class="user-pill" id="profile-button" type="button" aria-label="Abrir perfil">
+            <div class="avatar">MO</div>
+            <span id="user-role-label">Visitante</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="screen login-screen active" id="login">
+        <div class="login-art">
+          <span class="eyebrow">Acesso seguro</span>
+          <h2>Entre na operação da confeitaria em segundos.</h2>
+          <p>Login pensado para atendentes de balcão, confeiteiros e clientes finais acompanharem pedidos, produção e retiradas com segurança.</p>
+          <div class="honey-card">
+            <strong>Perfis disponíveis</strong>
+            <span>Atendente · Confeiteiro · Cliente Final</span>
+          </div>
+          <div class="auth-benefits">
+            <span>Atendente: vendas e encomendas</span>
+            <span>Confeiteiro: fila de produção</span>
+            <span>Cliente: pedidos e histórico</span>
+          </div>
+        </div>
+        <form class="login-panel auth-panel" id="login-form" method="post" data-api-endpoint="/api/auth/login">
+          <div class="brand large">
+            <div class="brand-mark">PM</div>
+            <div>
+              <strong>Pão de Mel</strong>
+              <span>& Cia</span>
+            </div>
+          </div>
+          <div class="auth-switch" role="tablist" aria-label="Autenticação">
+            <button class="active" type="button" data-screen-link="login">Entrar</button>
+            <button type="button" data-screen-link="register">Criar conta</button>
+          </div>
+          <label class="form-label">E-mail ou usuário
+            <input class="form-control" type="text" name="login" placeholder="exemplo@paodemel.com" autocomplete="username" required>
+          </label>
+          <label class="form-label">Senha
+            <input class="form-control" type="password" name="senha" placeholder="••••••••" autocomplete="current-password" required>
+          </label>
+          <label class="form-label">Perfil de acesso
+            <select class="form-select" name="perfil" required>
+              <option value="GERENTE">Gerente</option>
+              <option value="ATENDENTE">Atendente de balcão</option>
+              <option value="CONFEITEIRO">Confeiteiro</option>
+              <option value="CLIENTE">Cliente final</option>
+            </select>
+          </label>
+          <div class="auth-options">
+            <label class="check-line"><input type="checkbox" name="lembrar"> Lembrar acesso</label>
+            <a href="#">Recuperar senha</a>
+          </div>
+          <button class="primary-button" type="button" id="login-button">Entrar</button>
+          <p class="api-note">Autenticação conectada à API em <code>/api/auth/login</code>.</p>
+        </form>
+      </section>
+
+      <section class="screen login-screen register-screen" id="register">
+        <div class="login-art register-art">
+          <span class="eyebrow">Cadastro inteligente</span>
+          <h2>Crie acessos diferentes para cada tipo de usuário.</h2>
+          <p>O cadastro separa permissões operacionais da equipe e uma experiência simples para clientes finais acompanharem encomendas.</p>
+          <div class="profile-preview">
+            <article><strong>Gerente</strong><span>Acesso total ao sistema</span></article>
+            <article><strong>Atendente</strong><span>PDV, pedidos e clientes</span></article>
+            <article><strong>Confeiteiro</strong><span>Produção e prioridades</span></article>
+            <article><strong>Cliente</strong><span>Encomendas e retiradas</span></article>
+          </div>
+        </div>
+        <form class="login-panel auth-panel register-panel" id="register-form" method="post" data-api-endpoint="/api/auth/register">
+          <div class="brand large">
+            <div class="brand-mark">PM</div>
+            <div>
+              <strong>Pão de Mel</strong>
+              <span>& Cia</span>
+            </div>
+          </div>
+          <div class="auth-switch" role="tablist" aria-label="Autenticação">
+            <button type="button" data-screen-link="login">Entrar</button>
+            <button class="active" type="button" data-screen-link="register">Criar conta</button>
+          </div>
+          <div class="form-grid">
+            <label class="form-label">Nome completo
+              <input class="form-control" type="text" name="nome" placeholder="Maria Oliveira" autocomplete="name" required>
+            </label>
+            <label class="form-label">Telefone / WhatsApp
+              <input class="form-control" type="tel" name="telefone" placeholder="(11) 99999-0000" autocomplete="tel" required>
+            </label>
+            <label class="form-label">E-mail
+              <input class="form-control" type="email" name="email" placeholder="maria@email.com" autocomplete="email" required>
+            </label>
+            <label class="form-label">Tipo de cadastro
+              <select class="form-select" name="perfil" id="register-profile" required>
+                <option value="CLIENTE">Cliente final</option>
+                <option value="GERENTE">Gerente</option>
+                <option value="ATENDENTE">Atendente de balcão</option>
+                <option value="CONFEITEIRO">Confeiteiro</option>
+              </select>
+            </label>
+            <label class="form-label">Senha
+              <input class="form-control" type="password" name="senha" placeholder="Mínimo 8 caracteres" autocomplete="new-password" minlength="8" required>
+            </label>
+            <label class="form-label">Confirmar senha
+              <input class="form-control" type="password" name="confirmarSenha" placeholder="Repita a senha" autocomplete="new-password" minlength="8" required>
+            </label>
+            <label class="form-label employee-field span-2">Código interno da loja
+              <input class="form-control" type="text" name="codigoInterno" placeholder="Obrigatório para atendentes e confeiteiros">
+            </label>
+          </div>
+          <label class="check-line terms-line">
+            <input type="checkbox" name="termos" required>
+            Aceito os termos de uso e a política de privacidade.
+          </label>
+          <button class="primary-button" type="button" id="create-account-button">Criar cadastro</button>
+          <p class="api-note">Cadastro conectado à API em <code>/api/auth/register</code>.</p>
+        </form>
+      </section>
+
+      <section class="screen" id="dashboard">
+        <div class="kpi-grid five">
+          <article class="kpi-card"><span>Encomendas para hoje</span><strong>18</strong><small>4 com prioridade alta</small></article>
+          <article class="kpi-card"><span>Bolos em produção</span><strong>9</strong><small>2 decorando agora</small></article>
+          <article class="kpi-card"><span>Pães disponíveis</span><strong>342</strong><small>Atualizado há 2 min</small></article>
+          <article class="kpi-card warning"><span>Estoque baixo</span><strong>7</strong><small>3 itens críticos</small></article>
+          <article class="kpi-card success"><span>Pedidos entregues</span><strong>26</strong><small>Meta diária 80%</small></article>
+        </div>
+
+        <div class="content-grid">
+          <article class="panel chart-panel">
+            <div class="panel-header">
+              <div><span class="eyebrow">Vendas</span><h2>Vendas da semana</h2></div>
+              <button class="ghost-button">Ver detalhes</button>
+            </div>
+            <div class="bar-chart" aria-label="Gráfico de vendas da semana">
+              <span style="height: 42%"></span><span style="height: 64%"></span><span style="height: 52%"></span><span style="height: 76%"></span><span style="height: 88%"></span><span style="height: 68%"></span><span style="height: 94%"></span>
+            </div>
+            <div class="chart-labels"><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span><span>Dom</span></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div><span class="eyebrow">Produção</span><h2>Produção por dia</h2></div>
+            </div>
+            <div class="line-card">
+              <div class="line-graph"></div>
+              <div class="metric-row"><span>Bolos</span><strong>54</strong></div>
+              <div class="metric-row"><span>Fornadas</span><strong>31</strong></div>
+            </div>
+          </article>
+
+          <article class="panel alerts-panel">
+            <div class="panel-header"><div><span class="eyebrow">Alertas</span><h2>Atenção imediata</h2></div></div>
+            <div class="alert-list">
+              <div class="alert-item danger"><strong>Produtos esgotados</strong><span>Brioche e pão australiano sem estoque.</span></div>
+              <div class="alert-item warning"><strong>Encomendas atrasadas</strong><span>2 pedidos passaram do horário previsto.</span></div>
+              <div class="alert-item danger"><strong>Estoque crítico</strong><span>Chocolate 70%, creme de leite e farinha.</span></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="screen" id="orders">
+        <div class="screen-toolbar">
+          <div class="filter-row">
+            <input type="date">
+            <input type="search" placeholder="Cliente">
+            <select><option>Status</option><option>Aguardando Produção</option><option>Em Produção</option><option>Pronto</option><option>Entregue</option></select>
+          </div>
+          <button class="primary-button" data-screen-link="new-order">Nova Encomenda</button>
+        </div>
+        <article class="panel table-panel">
+          <table>
+            <thead><tr><th>Código</th><th>Cliente</th><th>Massa</th><th>Recheio</th><th>Data de entrega</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>#PM-1048</td><td>Ana Clara</td><td>Chocolate</td><td>Ninho com morango</td><td>Hoje, 15:00</td><td><span class="badge waiting">Aguardando Produção</span></td></tr>
+              <tr><td>#PM-1049</td><td>Roberto Lima</td><td>Baunilha</td><td>Doce de leite</td><td>Hoje, 17:30</td><td><span class="badge production">Em Produção</span></td></tr>
+              <tr><td>#PM-1050</td><td>Marina Souza</td><td>Red velvet</td><td>Cream cheese</td><td>Amanhã, 10:00</td><td><span class="badge ready">Pronto</span></td></tr>
+              <tr><td>#PM-1051</td><td>Casa Nova</td><td>Cenoura</td><td>Brigadeiro</td><td>Ontem, 18:00</td><td><span class="badge delivered">Entregue</span></td></tr>
+            </tbody>
+          </table>
+        </article>
+      </section>
+
+      <section class="screen" id="new-order">
+        <article class="panel wizard-panel">
+          <div class="wizard-steps">
+            <button class="wizard-step active" data-step="1">1 Dados do Cliente</button>
+            <button class="wizard-step" data-step="2">2 Configuração</button>
+            <button class="wizard-step" data-step="3">3 Entrega</button>
+          </div>
+
+          <div class="wizard-content active" data-step-content="1">
+            <h2>Dados do Cliente</h2>
+            <div class="form-grid">
+              <label>Nome<input type="text" placeholder="Nome completo"></label>
+              <label>Telefone<input type="tel" placeholder="(11) 99999-0000"></label>
+              <label>WhatsApp<input type="tel" placeholder="(11) 99999-0000"></label>
+            </div>
+          </div>
+
+          <div class="wizard-content" data-step-content="2">
+            <h2>Configuração do Bolo</h2>
+            <div class="form-grid">
+              <label>Massa<select><option>Chocolate</option><option>Baunilha</option><option>Red velvet</option></select></label>
+              <label>Recheio<select><option>Ninho com morango</option><option>Doce de leite</option><option>Brigadeiro belga</option></select></label>
+              <label>Cobertura<select><option>Ganache</option><option>Chantininho</option><option>Buttercream</option></select></label>
+              <label>Peso<select><option>1 kg</option><option>2 kg</option><option>3 kg</option></select></label>
+              <label class="span-2">Observações<textarea placeholder="Tema, cores, mensagem e restrições alimentares"></textarea></label>
+            </div>
+          </div>
+
+          <div class="wizard-content" data-step-content="3">
+            <h2>Entrega</h2>
+            <div class="form-grid">
+              <label>Data<input type="date" class="invalid-date"></label>
+              <label>Hora de retirada<input type="time" value="15:00"></label>
+            </div>
+            <div class="friendly-message">Escolha uma data com pelo menos 48h de antecedência. Feriados aparecem bloqueados no calendário.</div>
+          </div>
+
+          <div class="wizard-actions">
+            <button class="ghost-button" id="wizard-prev">Voltar</button>
+            <button class="primary-button" id="wizard-next">Continuar</button>
+          </div>
+        </article>
+      </section>
+
+      <section class="screen" id="production">
+        <div class="kanban-board">
+          <article class="kanban-column"><h2>Aguardando Produção</h2><div class="cake-card" draggable="true"><div class="cake-photo chocolate"></div><strong>Ana Clara</strong><span>15:00 · Alta prioridade</span></div></article>
+          <article class="kanban-column"><h2>Preparando Massa</h2><div class="cake-card" draggable="true"><div class="cake-photo vanilla"></div><strong>Buffet Jardim</strong><span>16:30 · Normal</span></div></article>
+          <article class="kanban-column"><h2>Recheando</h2><div class="cake-card" draggable="true"><div class="cake-photo caramel"></div><strong>Roberto Lima</strong><span>17:30 · Alta prioridade</span></div></article>
+          <article class="kanban-column"><h2>Decorando</h2><div class="cake-card" draggable="true"><div class="cake-photo berry"></div><strong>Marina Souza</strong><span>Amanhã 10:00 · Normal</span></div></article>
+          <article class="kanban-column"><h2>Finalizado</h2><div class="cake-card" draggable="true"><div class="cake-photo honey"></div><strong>Casa Nova</strong><span>Retirada liberada</span></div></article>
+        </div>
+      </section>
+
+      <section class="screen" id="batches">
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-header"><div><span class="eyebrow">Fornada</span><h2>Registrar produção</h2></div></div>
+            <div class="form-grid single">
+              <label>Tipo de pão<select><option>Pão francês</option><option>Brioche</option><option>Pão australiano</option></select></label>
+              <label>Quantidade produzida<input type="number" value="120"></label>
+              <label>Hora da saída<input type="time" value="08:30"></label>
+              <button class="primary-button" id="batch-button">Registrar Fornada</button>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel-header"><div><span class="eyebrow">Disponibilidade</span><h2>Pães no balcão</h2></div></div>
+            <div class="availability-list">
+              <div><span>Pão francês</span><strong>184 un.</strong></div>
+              <div><span>Croissant</span><strong>36 un.</strong></div>
+              <div class="sold-out"><span>Brioche</span><strong>Produto Esgotado</strong></div>
+              <div><span>Pão de queijo</span><strong>52 un.</strong></div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="screen" id="stock">
+        <div class="kpi-grid">
+          <article class="kpi-card"><span>Total de Insumos</span><strong>86</strong><small>12 categorias</small></article>
+          <article class="kpi-card danger"><span>Itens Críticos</span><strong>3</strong><small>Repor hoje</small></article>
+          <article class="kpi-card"><span>Consumo do Dia</span><strong>R$ 684</strong><small>+8% vs ontem</small></article>
+        </div>
+        <article class="panel table-panel">
+          <table>
+            <thead><tr><th>Insumo</th><th>Quantidade atual</th><th>Unidade</th><th>Estoque mínimo</th><th>Indicador</th></tr></thead>
+            <tbody>
+              <tr><td>Farinha de trigo</td><td>42</td><td>kg</td><td>20</td><td><span class="stock-status normal">Normal</span></td></tr>
+              <tr><td>Chocolate 70%</td><td>4</td><td>kg</td><td>8</td><td><span class="stock-status critical">Crítico</span></td></tr>
+              <tr><td>Creme de leite</td><td>10</td><td>l</td><td>12</td><td><span class="stock-status attention">Atenção</span></td></tr>
+              <tr><td>Açúcar refinado</td><td>35</td><td>kg</td><td>18</td><td><span class="stock-status normal">Normal</span></td></tr>
+            </tbody>
+          </table>
+        </article>
+      </section>
+
+      <section class="screen" id="pos">
+        <div class="pos-layout">
+          <article class="panel product-area">
+            <div class="panel-header">
+              <div><span class="eyebrow">PDV</span><h2>Produtos</h2></div>
+              <div class="quick-actions"><button>Bolos</button><button>Pães</button><button>Cafés</button></div>
+            </div>
+            <div class="product-grid">
+              <button class="product-card"><strong>Pão francês</strong><span>R$ 0,90</span><small>184 disponíveis</small></button>
+              <button class="product-card"><strong>Croissant</strong><span>R$ 9,50</span><small>36 disponíveis</small></button>
+              <button class="product-card low-stock" id="low-stock-product"><strong>Pão de queijo</strong><span>R$ 4,00</span><small>5 disponíveis</small></button>
+              <button class="product-card"><strong>Fatia de bolo</strong><span>R$ 14,00</span><small>22 disponíveis</small></button>
+              <button class="product-card"><strong>Café coado</strong><span>R$ 6,00</span><small>Sem controle</small></button>
+              <button class="product-card"><strong>Pão de mel</strong><span>R$ 8,00</span><small>48 disponíveis</small></button>
+            </div>
+          </article>
+          <aside class="panel cart-panel">
+            <h2>Carrinho</h2>
+            <div class="cart-line"><span>2x Croissant</span><strong>R$ 19,00</strong></div>
+            <div class="cart-line"><span>1x Café coado</span><strong>R$ 6,00</strong></div>
+            <div class="cart-total"><span>Total</span><strong>R$ 25,00</strong></div>
+            <button class="primary-button">Finalizar pagamento</button>
+            <button class="ghost-button">Salvar venda</button>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen" id="reports">
+        <div class="screen-toolbar">
+          <div class="segmented">
+            <button class="active">Dia</button><button>Semana</button><button>Mês</button>
+          </div>
+        </div>
+        <div class="kpi-grid">
+          <article class="kpi-card"><span>Receita</span><strong>R$ 8.420</strong><small>+12% no período</small></article>
+          <article class="kpi-card"><span>Lucro</span><strong>R$ 3.180</strong><small>Margem 37,7%</small></article>
+          <article class="kpi-card"><span>Consumo de insumos</span><strong>R$ 2.160</strong><small>Farinha lidera</small></article>
+        </div>
+        <div class="content-grid two">
+          <article class="panel"><div class="panel-header"><h2>Produtos mais vendidos</h2></div><div class="ranking"><span>Pão francês</span><strong>840 un.</strong><span>Croissant</span><strong>116 un.</strong><span>Pão de mel</span><strong>98 un.</strong></div></article>
+          <article class="panel"><div class="panel-header"><h2>Bolos mais encomendados</h2></div><div class="donut-chart"><span>Chocolate 42%</span></div></article>
+        </div>
+      </section>
+
+      <section class="screen" id="admin">
+        <div class="admin-grid">
+          <article class="panel permission-panel">
+            <div class="panel-header"><div><span class="eyebrow">Gerente</span><h2>Controle granular de acesso</h2></div></div>
+            <div class="permission-list">
+              <label><span>Usuários</span><input type="checkbox" checked></label>
+              <label><span>Custos</span><input type="checkbox" checked></label>
+              <label><span>Receitas</span><input type="checkbox" checked></label>
+              <label><span>Configurações</span><input type="checkbox" checked></label>
+            </div>
+          </article>
+          <article class="panel roles-panel">
+            <h2>Perfis</h2>
+            <div class="role-card"><strong>Atendente</strong><span>PDV, encomendas e consulta de estoque</span></div>
+            <div class="role-card"><strong>Confeiteiro</strong><span>Kanban de produção e timeline de pedidos</span></div>
+            <div class="role-card"><strong>Padeiro</strong><span>Fornadas e disponibilidade de pães</span></div>
+            <div class="role-card"><strong>Gerente</strong><span>Acesso total, relatórios e permissões</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="screen" id="profile">
+        <div class="profile-layout">
+          <article class="panel profile-hero">
+            <div class="profile-avatar-large">MO</div>
+            <div>
+              <span class="eyebrow">Meu perfil</span>
+              <h2 id="profile-name">Matheus Oliveira</h2>
+              <p id="profile-role-description">Perfil conectado ao sistema Pão de Mel & Cia.</p>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Dados da conta</span>
+                <h2>Informações pessoais</h2>
+              </div>
+            </div>
+            <div class="profile-info-grid">
+              <div><span>Nome</span><strong>Matheus Oliveira</strong></div>
+              <div><span>E-mail</span><strong>matheus@paodemel.com</strong></div>
+              <div><span>Telefone</span><strong>(11) 99999-0000</strong></div>
+              <div><span>Perfil</span><strong id="profile-role-value">Visitante</strong></div>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Permissões</span>
+                <h2>Acessos liberados</h2>
+              </div>
+            </div>
+            <div class="permission-tags" id="profile-permissions">
+              <span>Faça login para visualizar permissões</span>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Segurança</span>
+                <h2>Preferências da conta</h2>
+              </div>
+            </div>
+            <div class="profile-actions">
+              <button class="ghost-button" type="button">Alterar senha</button>
+              <button class="ghost-button" type="button">Atualizar telefone</button>
+              <button class="primary-button" type="button" id="logout-button">Sair da conta</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="extras-strip">
+        <article class="mini-panel">Calendário de produção</article>
+        <article class="mini-panel">Timeline de pedidos</article>
+        <article class="mini-panel skeleton"></article>
+        <article class="mini-panel empty-state">Nenhum atraso novo</article>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="stock-modal" aria-hidden="true">
+    <div class="modal">
+      <button class="modal-close" id="modal-close" aria-label="Fechar">×</button>
+      <span class="modal-icon">!</span>
+      <h2>Estoque insuficiente</h2>
+      <p>Disponível apenas 5 unidades.</p>
+      <button class="primary-button" id="modal-ok">Entendi</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Fornada registrada. Estoque atualizado automaticamente.</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

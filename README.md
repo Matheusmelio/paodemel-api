@@ -6,6 +6,37 @@ Backend inicial em Java com Spring Boot para o sistema Pao de Mel & Cia.
 
 - Java 17+
 - Maven 3.9+
+- PostgreSQL 18 rodando localmente
+- Database `Paoemel`
+
+## Banco de dados
+
+A API usa PostgreSQL via Spring Data JPA.
+
+Configuracao padrao local:
+
+```properties
+spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/Paoemel}
+spring.datasource.username=${DATABASE_USERNAME:postgres}
+spring.datasource.password=${DATABASE_PASSWORD:1234}
+```
+
+Para usar o RDS da AWS, defina as variaveis de ambiente antes de iniciar:
+
+```powershell
+$env:DATABASE_URL='jdbc:postgresql://paoemelmetabase.cxa2yiwgqlhd.us-east-2.rds.amazonaws.com:5432/postgres?sslmode=verify-full&sslrootcert=../global-bundle.pem'
+$env:DATABASE_USERNAME='paoemel'
+$env:DATABASE_PASSWORD='SUA_SENHA_RDS'
+mvn spring-boot:run
+```
+
+Na primeira execucao, o Hibernate cria/atualiza as tabelas automaticamente e a API insere dados iniciais em:
+
+- `usuarios`
+- `encomendas`
+- `insumos`
+- `fornadas`
+- `vendas`
 
 ## Como executar
 
@@ -19,6 +50,18 @@ A API sobe em:
 ```text
 http://localhost:8080
 ```
+
+O frontend do sistema fica embutido em `src/main/resources/static/` e é servido pela própria API na raiz (`/`). Login e cadastro ja chamam `/api/auth/login` e `/api/auth/register`.
+
+## Deploy unificado (Railway)
+
+1. Publique o repositorio `paodemel-api` no Railway.
+2. Configure as variaveis:
+   - `DATABASE_URL` no formato JDBC, por exemplo `jdbc:postgresql://host:porta/railway`
+   - `DATABASE_USERNAME`
+   - `DATABASE_PASSWORD`
+   - `PORT` e definido automaticamente pelo Railway
+3. Acesse a aplicacao completa pela URL do servico, por exemplo `https://paodemel-api-production.up.railway.app/`.
 
 ## Autenticacao
 
@@ -90,4 +133,4 @@ Se outro perfil tentar acessar, a API retorna `403`.
 
 ## Observacao
 
-Esta primeira versao usa dados em memoria para acelerar o prototipo. O proximo passo natural e adicionar banco de dados com Spring Data JPA e persistir usuarios, encomendas, estoque e vendas.
+Esta versao ja persiste dados no PostgreSQL `Paoemel`. O proximo passo natural e evoluir autenticação com hash de senha e JWT.

@@ -9,6 +9,8 @@ import org.springframework.util.StringUtils;
 @Service
 public class AuthService {
 
+  private final UsuarioRepository usuarioRepository;
+
   private static final Map<Perfil, List<String>> PERMISSOES = Map.of(
       Perfil.GERENTE, List.of("DASHBOARD", "ENCOMENDAS", "PRODUCAO", "FORNADAS", "ESTOQUE", "VENDAS", "RELATORIOS", "ADMINISTRACAO"),
       Perfil.ATENDENTE, List.of("DASHBOARD", "ENCOMENDAS", "ESTOQUE", "VENDAS"),
@@ -16,13 +18,29 @@ public class AuthService {
       Perfil.CLIENTE, List.of("DASHBOARD", "NOVA_ENCOMENDA", "TIMELINE_PEDIDOS")
   );
 
+  public AuthService(UsuarioRepository usuarioRepository) {
+    this.usuarioRepository = usuarioRepository;
+  }
+
   public AuthResponse login(AuthRequest request) {
+    String email = normalizarEmail(request.login());
+    Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
+        .orElseThrow(() -> new IllegalArgumentException("E-mail nao cadastrado. Verifique o e-mail informado ou crie uma conta."));
+
+    if (!usuario.getSenha().equals(request.senha())) {
+      throw new IllegalArgumentException("Senha incorreta. Confira sua senha e tente novamente.");
+    }
+
+    if (usuario.getPerfil() != request.perfil()) {
+      throw new IllegalArgumentException("Perfil de acesso incorreto. Selecione o perfil cadastrado para este usuario.");
+    }
+
     return new AuthResponse(
-        buildToken(request.perfil()),
-        nomePadrao(request.login()),
-        request.login().contains("@") ? request.login() : request.login() + "@paodemel.com",
-        request.perfil(),
-        permissoes(request.perfil())
+        buildToken(usuario.getPerfil()),
+        usuario.getNome(),
+        usuario.getEmail(),
+        usuario.getPerfil(),
+        permissoes(usuario.getPerfil())
     );
   }
 
@@ -35,12 +53,25 @@ public class AuthService {
       throw new IllegalArgumentException("Codigo interno e obrigatorio para perfis da equipe.");
     }
 
-    return new AuthResponse(
-        buildToken(request.perfil()),
+    if (usuarioRepository.existsByEmailIgnoreCase(request.email())) {
+      throw new IllegalArgumentException("Ja existe um usuario cadastrado com este e-mail.");
+    }
+
+    Usuario usuario = usuarioRepository.save(new Usuario(
         request.nome(),
+        request.telefone(),
         request.email(),
+        request.senha(),
         request.perfil(),
-        permissoes(request.perfil())
+        request.codigoInterno()
+    ));
+
+    return new AuthResponse(
+        buildToken(usuario.getPerfil()),
+        usuario.getNome(),
+        usuario.getEmail(),
+        usuario.getPerfil(),
+        permissoes(usuario.getPerfil())
     );
   }
 
@@ -69,5 +100,9 @@ public class AuthService {
 
     String base = login.contains("@") ? login.substring(0, login.indexOf("@")) : login;
     return base.replace(".", " ");
+  }
+
+  private String normalizarEmail(String login) {
+    return login.contains("@") ? login : login + "@paodemel.com";
   }
 }

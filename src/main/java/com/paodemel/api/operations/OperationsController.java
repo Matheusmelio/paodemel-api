@@ -2,6 +2,8 @@ package com.paodemel.api.operations;
 
 import com.paodemel.api.auth.AuthService;
 import com.paodemel.api.auth.Perfil;
+import com.paodemel.api.auth.UsuarioRepository;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,9 +18,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class OperationsController {
 
   private final AuthService authService;
+  private final InsumoRepository insumoRepository;
+  private final FornadaRepository fornadaRepository;
+  private final VendaRepository vendaRepository;
+  private final UsuarioRepository usuarioRepository;
 
-  public OperationsController(AuthService authService) {
+  public OperationsController(
+      AuthService authService,
+      InsumoRepository insumoRepository,
+      FornadaRepository fornadaRepository,
+      VendaRepository vendaRepository,
+      UsuarioRepository usuarioRepository
+  ) {
     this.authService = authService;
+    this.insumoRepository = insumoRepository;
+    this.fornadaRepository = fornadaRepository;
+    this.vendaRepository = vendaRepository;
+    this.usuarioRepository = usuarioRepository;
   }
 
   @GetMapping("/producao")
@@ -34,26 +50,46 @@ public class OperationsController {
 
   @PostMapping("/fornadas")
   public Map<String, Object> registrarFornada(@RequestBody Map<String, Object> request) {
+    Fornada fornada = fornadaRepository.save(new Fornada(
+        String.valueOf(request.getOrDefault("tipoPao", "Pao frances")),
+        Integer.parseInt(String.valueOf(request.getOrDefault("quantidadeProduzida", 0))),
+        String.valueOf(request.getOrDefault("horaSaida", "08:00"))
+    ));
+
     return Map.of(
         "mensagem", "Fornada registrada. Estoque atualizado automaticamente.",
-        "fornada", request
+        "fornada", Map.of(
+            "tipoPao", fornada.getTipoPao(),
+            "quantidadeProduzida", fornada.getQuantidadeProduzida(),
+            "horaSaida", fornada.getHoraSaida()
+        )
     );
   }
 
   @GetMapping("/estoque")
   public List<Map<String, Object>> estoque() {
-    return List.of(
-        Map.of("insumo", "Farinha de trigo", "quantidadeAtual", 42, "unidade", "kg", "estoqueMinimo", 20, "status", "Normal"),
-        Map.of("insumo", "Chocolate 70%", "quantidadeAtual", 4, "unidade", "kg", "estoqueMinimo", 8, "status", "Critico"),
-        Map.of("insumo", "Creme de leite", "quantidadeAtual", 10, "unidade", "l", "estoqueMinimo", 12, "status", "Atencao")
-    );
+    return insumoRepository.findAll().stream()
+        .map(insumo -> Map.<String, Object>of(
+            "insumo", insumo.getNome(),
+            "quantidadeAtual", insumo.getQuantidadeAtual(),
+            "unidade", insumo.getUnidade(),
+            "estoqueMinimo", insumo.getEstoqueMinimo(),
+            "status", insumo.getStatus()
+        ))
+        .toList();
   }
 
   @PostMapping("/vendas")
   public Map<String, Object> registrarVenda(@RequestBody Map<String, Object> request) {
+    BigDecimal total = new BigDecimal(String.valueOf(request.getOrDefault("total", "0")));
+    Venda venda = vendaRepository.save(new Venda(total));
+
     return Map.of(
         "mensagem", "Venda registrada com sucesso.",
-        "venda", request
+        "venda", Map.of(
+            "total", venda.getTotal(),
+            "criadaEm", venda.getCriadaEm()
+        )
     );
   }
 
@@ -61,8 +97,8 @@ public class OperationsController {
   public Map<String, Object> relatorios(@RequestHeader("X-Perfil") Perfil perfil) {
     authService.exigirGerente(perfil);
     return Map.of(
-        "receita", 8420,
-        "lucro", 3180,
+        "receita", vendaRepository.receitaTotal(),
+        "lucro", vendaRepository.receitaTotal().multiply(new BigDecimal("0.37")),
         "produtosMaisVendidos", List.of("Pao frances", "Croissant", "Pao de mel"),
         "bolosMaisEncomendados", List.of("Chocolate", "Red velvet", "Cenoura")
     );
@@ -85,9 +121,7 @@ public class OperationsController {
   @GetMapping("/perfil")
   public Map<String, Object> perfil(@RequestHeader("X-Perfil") Perfil perfil) {
     return Map.of(
-        "nome", "Matheus Oliveira",
-        "email", "matheus@paodemel.com",
-        "telefone", "(11) 99999-0000",
+        "usuariosCadastrados", usuarioRepository.count(),
         "perfil", perfil,
         "permissoes", authService.permissoes(perfil)
     );

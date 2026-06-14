@@ -16,9 +16,15 @@ public class ApiExceptionHandler {
     return new ApiError(HttpStatus.FORBIDDEN.value(), exception.getMessage());
   }
 
-  @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class})
+  @ExceptionHandler(IllegalArgumentException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
-  public ApiError handleBadRequest(Exception exception) {
-    return new ApiError(HttpStatus.BAD_REQUEST.value(), "Dados invalidos. Verifique as informacoes enviadas.");
+  public ApiError handleBadRequest(IllegalArgumentException exception) {
+    return new ApiError(HttpStatus.BAD_REQUEST.value(), exception.getMessage());
+  }
+
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ApiError handleValidationError(MethodArgumentNotValidException exception) {
+    return new ApiError(HttpStatus.BAD_REQUEST.value(), "Dados invalidos. Preencha todos os campos obrigatorios corretamente.");
   }
 }
