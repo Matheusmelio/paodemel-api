@@ -35,16 +35,24 @@ public class Usuario {
 
   private String codigoInterno;
 
+  @Column(name = "cpf_cliente", length = 11)
+  private String cpfCliente;
+
   protected Usuario() {
   }
 
   public Usuario(String nome, String telefone, String email, String senha, Perfil perfil, String codigoInterno) {
+    this(nome, telefone, email, senha, perfil, codigoInterno, null);
+  }
+
+  public Usuario(String nome, String telefone, String email, String senha, Perfil perfil, String codigoInterno, String cpfCliente) {
     this.nome = nome;
     this.telefone = telefone;
     this.email = email;
     this.senha = senha;
     this.perfil = perfil;
     this.codigoInterno = codigoInterno;
+    this.cpfCliente = cpfCliente;
   }
 
   public String getNome() {
@@ -65,5 +73,9 @@ public class Usuario {
 
   public Perfil getPerfil() {
     return perfil;
+  }
+
+  public String getCpfCliente() {
+    return cpfCliente;
   }
 }

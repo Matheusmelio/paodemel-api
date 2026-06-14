@@ -1,10 +1,14 @@
 package com.paodemel.api.orders;
 
+import com.paodemel.api.auth.Cliente;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -32,6 +36,10 @@ public class OrderEntity {
 
   @Column(nullable = false)
   private String status;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "cpf_cliente", referencedColumnName = "cpf_cliente")
+  private Cliente clienteCadastro;
 
   protected OrderEntity() {
   }

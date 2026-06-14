@@ -161,6 +161,40 @@
             <label class="form-label">Confirmar senha
               <input class="form-control" type="password" name="confirmarSenha" placeholder="Repita a senha" autocomplete="new-password" minlength="8" required>
             </label>
+            <label class="form-label client-field">CPF
+              <input class="form-control" type="text" name="cpfCliente" placeholder="00000000000" inputmode="numeric" maxlength="14">
+            </label>
+            <label class="form-label client-field">Nascimento
+              <input class="form-control" type="date" name="nascimento">
+            </label>
+            <label class="form-label client-field">Sexo
+              <select class="form-select" name="sexo">
+                <option value="">Selecione</option>
+                <option value="F">Feminino</option>
+                <option value="M">Masculino</option>
+              </select>
+            </label>
+            <label class="form-label client-field">CEP
+              <input class="form-control" type="text" name="cep" placeholder="00000000" inputmode="numeric" maxlength="9">
+            </label>
+            <label class="form-label client-field span-2">Logradouro
+              <input class="form-control" type="text" name="logradouro" placeholder="Rua, avenida ou travessa">
+            </label>
+            <label class="form-label client-field">Número
+              <input class="form-control" type="text" name="numero" placeholder="123">
+            </label>
+            <label class="form-label client-field">Complemento
+              <input class="form-control" type="text" name="complemento" placeholder="Bloco, apto, anexo">
+            </label>
+            <label class="form-label client-field">Bairro
+              <input class="form-control" type="text" name="bairro" placeholder="Centro">
+            </label>
+            <label class="form-label client-field">Cidade
+              <input class="form-control" type="text" name="cidade" placeholder="São Paulo">
+            </label>
+            <label class="form-label client-field">Estado
+              <input class="form-control" type="text" name="estado" placeholder="SP" maxlength="2">
+            </label>
             <label class="form-label employee-field span-2">Código interno da loja
               <input class="form-control" type="text" name="codigoInterno" placeholder="Obrigatório para atendentes e confeiteiros">
             </label>
@@ -477,6 +511,6 @@
   <div class="toast" id="toast">Fornada registrada. Estoque atualizado automaticamente.</div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="script.js?v=5"></script>
+  <script src="script.js?v=6"></script>
 </body>
 </html>

@@ -338,19 +338,36 @@ async function handleRegister(event) {
 
   const registerData = new FormData(registerForm);
   const codigoInterno = String(registerData.get("codigoInterno") || "").trim();
+  const perfil = String(registerData.get("perfil") || "").trim();
   const payload = {
     nome: String(registerData.get("nome") || "").trim(),
     telefone: String(registerData.get("telefone") || "").trim(),
     email: String(registerData.get("email") || "").trim(),
-    perfil: String(registerData.get("perfil") || "").trim(),
+    perfil,
     senha: String(registerData.get("senha") || ""),
     confirmarSenha: String(registerData.get("confirmarSenha") || ""),
-    codigoInterno: codigoInterno || null
+    codigoInterno: codigoInterno || null,
+    cpfCliente: onlyDigits(registerData.get("cpfCliente")),
+    nascimento: String(registerData.get("nascimento") || "").trim() || null,
+    sexo: String(registerData.get("sexo") || "").trim() || null,
+    logradouro: String(registerData.get("logradouro") || "").trim() || null,
+    numero: String(registerData.get("numero") || "").trim() || null,
+    complemento: String(registerData.get("complemento") || "").trim() || null,
+    cep: onlyDigits(registerData.get("cep")),
+    bairro: String(registerData.get("bairro") || "").trim() || null,
+    cidade: String(registerData.get("cidade") || "").trim() || null,
+    estado: String(registerData.get("estado") || "").trim().toUpperCase() || null
   };
 
   if (!payload.nome || !payload.telefone || !payload.email || !payload.perfil || !payload.senha || !payload.confirmarSenha) {
     setAuthFeedback("Preencha todos os campos obrigatorios do cadastro.", "error");
     showToast("Preencha todos os campos obrigatorios do cadastro.");
+    return;
+  }
+
+  if (payload.perfil === "CLIENTE" && !hasCompleteClientData(payload)) {
+    setAuthFeedback("Para cliente, preencha CPF, nascimento, sexo, CEP e endereco completo.", "error");
+    showToast("Preencha os dados completos do cliente.");
     return;
   }
 
@@ -382,17 +399,48 @@ async function handleRegister(event) {
 function toggleEmployeeField() {
   const registerProfile = document.querySelector("#register-profile");
   const employeeField = document.querySelector(".employee-field");
+  const clientFields = document.querySelectorAll(".client-field");
 
   if (!registerProfile || !employeeField) {
     return;
   }
 
   const isEmployee = ["GERENTE", "ATENDENTE", "CONFEITEIRO"].includes(registerProfile.value);
+  const isClient = registerProfile.value === "CLIENTE";
   employeeField.classList.toggle("visible", isEmployee);
   const input = employeeField.querySelector("input");
   if (input) {
     input.required = isEmployee;
   }
+
+  clientFields.forEach((field) => {
+    field.classList.toggle("visible", isClient);
+    const control = field.querySelector("input, select");
+    if (control) {
+      control.required = isClient && control.name !== "complemento";
+    }
+  });
+}
+
+function onlyDigits(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function hasCompleteClientData(payload) {
+  return Boolean(
+    payload.cpfCliente &&
+    payload.cpfCliente.length === 11 &&
+    payload.nascimento &&
+    payload.sexo &&
+    payload.logradouro &&
+    payload.numero &&
+    payload.cep &&
+    payload.cep.length === 8 &&
+    payload.bairro &&
+    payload.cidade &&
+    payload.estado &&
+    payload.estado.length === 2
+  );
 }
 
 function restoreSession() {

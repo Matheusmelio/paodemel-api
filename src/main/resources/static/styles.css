@@ -629,11 +629,13 @@ body.dark .api-note code {
     radial-gradient(circle at 82% 18%, rgba(244, 185, 66, 0.48), transparent 18rem);
 }
 
-.employee-field {
+.employee-field,
+.client-field {
   display: none;
 }
 
-.employee-field.visible {
+.employee-field.visible,
+.client-field.visible {
   display: grid;
 }
 

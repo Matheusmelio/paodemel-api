@@ -1,5 +1,7 @@
 package com.paodemel.api.config;
 
+import com.paodemel.api.auth.Cliente;
+import com.paodemel.api.auth.ClienteRepository;
 import com.paodemel.api.auth.Perfil;
 import com.paodemel.api.auth.Usuario;
 import com.paodemel.api.auth.UsuarioRepository;
@@ -12,6 +14,7 @@ import com.paodemel.api.operations.VendaRepository;
 import com.paodemel.api.orders.OrderEntity;
 import com.paodemel.api.orders.OrderRepository;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +22,7 @@ import org.springframework.stereotype.Component;
 public class DatabaseSeeder implements CommandLineRunner {
 
   private final UsuarioRepository usuarioRepository;
+  private final ClienteRepository clienteRepository;
   private final OrderRepository orderRepository;
   private final InsumoRepository insumoRepository;
   private final FornadaRepository fornadaRepository;
@@ -26,12 +30,14 @@ public class DatabaseSeeder implements CommandLineRunner {
 
   public DatabaseSeeder(
       UsuarioRepository usuarioRepository,
+      ClienteRepository clienteRepository,
       OrderRepository orderRepository,
       InsumoRepository insumoRepository,
       FornadaRepository fornadaRepository,
       VendaRepository vendaRepository
   ) {
     this.usuarioRepository = usuarioRepository;
+    this.clienteRepository = clienteRepository;
     this.orderRepository = orderRepository;
     this.insumoRepository = insumoRepository;
     this.fornadaRepository = fornadaRepository;
@@ -52,10 +58,29 @@ public class DatabaseSeeder implements CommandLineRunner {
       return;
     }
 
+    String cpfCliente = "12345678901";
+    if (!clienteRepository.existsById(cpfCliente)) {
+      clienteRepository.save(new Cliente(
+          cpfCliente,
+          "Cliente Final",
+          LocalDate.of(1990, 1, 1),
+          "F",
+          "Rua das Flores",
+          "100",
+          "Apto 1",
+          "00000000",
+          "Centro",
+          "Sao Paulo",
+          "SP",
+          "(11) 96666-0000",
+          "cliente@email.com"
+      ));
+    }
+
     usuarioRepository.save(new Usuario("Gerente Pao de Mel", "(11) 99999-0000", "gerente@paodemel.com", "12345678", Perfil.GERENTE, "GER-001"));
     usuarioRepository.save(new Usuario("Atendente Balcao", "(11) 98888-0000", "atendente@paodemel.com", "12345678", Perfil.ATENDENTE, "ATE-001"));
     usuarioRepository.save(new Usuario("Confeiteiro Principal", "(11) 97777-0000", "confeiteiro@paodemel.com", "12345678", Perfil.CONFEITEIRO, "CON-001"));
-    usuarioRepository.save(new Usuario("Cliente Final", "(11) 96666-0000", "cliente@email.com", "12345678", Perfil.CLIENTE, null));
+    usuarioRepository.save(new Usuario("Cliente Final", "(11) 96666-0000", "cliente@email.com", "12345678", Perfil.CLIENTE, null, cpfCliente));
   }
 
   private void seedEncomendas() {
