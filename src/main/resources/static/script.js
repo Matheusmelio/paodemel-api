@@ -31,6 +31,13 @@ const rolePermissions = {
   CONFEITEIRO: ["Dashboard", "Encomendas", "Produção", "Estoque"],
   CLIENTE: ["Dashboard", "Nova encomenda", "Timeline de pedidos"]
 };
+const demoAuth = {
+  token: "demo-gerente",
+  nome: "Gerente Pao de Mel",
+  email: "gerente@paodemel.com",
+  perfil: "GERENTE",
+  permissoes: rolePermissions.GERENTE
+};
 let isAuthenticated = false;
 let currentRole = null;
 let currentUser = null;
@@ -65,12 +72,15 @@ function getInitials(name) {
     .join("");
 }
 
-function applyAuthState(auth) {
+function applyAuthState(auth, persistSession = true) {
   currentUser = auth;
   currentRole = auth.perfil;
   isAuthenticated = true;
   document.body.classList.remove("role-gerente", "role-atendente", "role-confeiteiro", "role-cliente");
   document.body.classList.add("authenticated", `role-${currentRole.toLowerCase()}`);
+  if (persistSession) {
+    localStorage.setItem("paodemel-auth", JSON.stringify(auth));
+  }
   updateProfileView();
 }
 
@@ -170,13 +180,21 @@ logoutButton.addEventListener("click", () => {
   isAuthenticated = false;
   currentRole = null;
   currentUser = null;
+  localStorage.removeItem("paodemel-auth");
   document.body.classList.remove("authenticated", "role-gerente", "role-atendente", "role-confeiteiro", "role-cliente");
   updateProfileView();
   showToast("Sessão encerrada com segurança.");
   showScreen("login");
 });
 
-updateProfileView();
+try {
+  const storedAuth = localStorage.getItem("paodemel-auth");
+  applyAuthState(storedAuth ? JSON.parse(storedAuth) : demoAuth, false);
+  showScreen("dashboard");
+} catch (error) {
+  applyAuthState(demoAuth, false);
+  showScreen("dashboard");
+}
 
 const themeToggle = document.querySelector("#theme-toggle");
 
