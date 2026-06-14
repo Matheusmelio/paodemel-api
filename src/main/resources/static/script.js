@@ -13,10 +13,6 @@ const screenTitles = {
   register: "Cadastro"
 };
 
-const navItems = document.querySelectorAll(".nav-item");
-const screens = document.querySelectorAll(".screen");
-const screenTitle = document.querySelector("#screen-title");
-const breadcrumbCurrent = document.querySelector("#breadcrumb-current");
 const publicScreens = new Set(["login", "register"]);
 const managerOnlyScreens = new Set(["reports", "admin"]);
 const roleLabels = {
@@ -31,16 +27,42 @@ const rolePermissions = {
   CONFEITEIRO: ["Dashboard", "Encomendas", "Produção", "Estoque"],
   CLIENTE: ["Dashboard", "Nova encomenda", "Timeline de pedidos"]
 };
-const demoAuth = {
-  token: "demo-gerente",
-  nome: "Gerente Pao de Mel",
-  email: "gerente@paodemel.com",
-  perfil: "GERENTE",
-  permissoes: rolePermissions.GERENTE
-};
+
 let isAuthenticated = false;
 let currentRole = null;
 let currentUser = null;
+let toastTimeout;
+
+const navItems = document.querySelectorAll(".nav-item");
+const screens = document.querySelectorAll(".screen");
+const screenTitle = document.querySelector("#screen-title");
+const breadcrumbCurrent = document.querySelector("#breadcrumb-current");
+const loginForm = document.querySelector("#login-form");
+const loginButton = document.querySelector("#login-button");
+const registerForm = document.querySelector("#register-form");
+const createAccountButton = document.querySelector("#create-account-button");
+const userRoleLabel = document.querySelector("#user-role-label");
+const profileButton = document.querySelector("#profile-button");
+const userAvatar = document.querySelector(".user-pill .avatar");
+const profileRoleValue = document.querySelector("#profile-role-value");
+const profileRoleDescription = document.querySelector("#profile-role-description");
+const profilePermissions = document.querySelector("#profile-permissions");
+const logoutButton = document.querySelector("#logout-button");
+const toast = document.querySelector("#toast");
+
+function showToast(message) {
+  if (!toast) {
+    return;
+  }
+
+  clearTimeout(toastTimeout);
+  toast.textContent = message;
+  toast.classList.add("active");
+
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove("active");
+  }, 2800);
+}
 
 async function apiRequest(path, options = {}) {
   const response = await fetch(path, {
@@ -72,16 +94,71 @@ function getInitials(name) {
     .join("");
 }
 
+function updateProfileView() {
+  const label = roleLabels[currentRole] || "Visitante";
+
+  if (userRoleLabel) {
+    userRoleLabel.textContent = currentUser?.nome || label;
+  }
+
+  if (userAvatar) {
+    userAvatar.textContent = getInitials(currentUser?.nome);
+  }
+
+  if (profileRoleValue) {
+    profileRoleValue.textContent = label;
+  }
+
+  if (profileRoleDescription) {
+    profileRoleDescription.textContent = currentUser
+      ? `Acesso ativo como ${label} (${currentUser.email}) no sistema Pão de Mel & Cia.`
+      : `Acesso ativo como ${label} no sistema Pão de Mel & Cia.`;
+  }
+
+  if (!profilePermissions) {
+    return;
+  }
+
+  profilePermissions.innerHTML = "";
+  const permissions = currentUser?.permissoes || rolePermissions[currentRole] || ["Faça login para visualizar permissões"];
+  permissions.forEach((permission) => {
+    const tag = document.createElement("span");
+    tag.textContent = permission;
+    profilePermissions.appendChild(tag);
+  });
+}
+
 function applyAuthState(auth, persistSession = true) {
   currentUser = auth;
   currentRole = auth.perfil;
   isAuthenticated = true;
   document.body.classList.remove("role-gerente", "role-atendente", "role-confeiteiro", "role-cliente");
   document.body.classList.add("authenticated", `role-${currentRole.toLowerCase()}`);
+
   if (persistSession) {
     localStorage.setItem("paodemel-auth", JSON.stringify(auth));
   }
+
   updateProfileView();
+}
+
+function clearAuthState() {
+  isAuthenticated = false;
+  currentRole = null;
+  currentUser = null;
+  localStorage.removeItem("paodemel-auth");
+  document.body.classList.remove("authenticated", "role-gerente", "role-atendente", "role-confeiteiro", "role-cliente");
+  updateProfileView();
+}
+
+function updateAuthTabs(screenId) {
+  if (!publicScreens.has(screenId)) {
+    return;
+  }
+
+  document.querySelectorAll("[data-screen-link]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.screenLink === screenId);
+  });
 }
 
 function showScreen(screenId) {
@@ -103,51 +180,26 @@ function showScreen(screenId) {
     item.classList.toggle("active", item.dataset.screen === screenId);
   });
 
+  updateAuthTabs(screenId);
+
   const title = screenTitles[screenId] || "Pão de Mel & Cia";
-  screenTitle.textContent = title;
-  breadcrumbCurrent.textContent = title.replace("Gestão de ", "");
+  if (screenTitle) {
+    screenTitle.textContent = title;
+  }
+  if (breadcrumbCurrent) {
+    breadcrumbCurrent.textContent = title.replace("Gestão de ", "");
+  }
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-navItems.forEach((item) => {
-  item.addEventListener("click", () => showScreen(item.dataset.screen));
-});
+async function handleLogin(event) {
+  event?.preventDefault();
 
-document.querySelectorAll("[data-screen-link]").forEach((button) => {
-  button.addEventListener("click", () => showScreen(button.dataset.screenLink));
-});
-
-const loginForm = document.querySelector("#login-form");
-const loginButton = document.querySelector("#login-button");
-const userRoleLabel = document.querySelector("#user-role-label");
-const profileButton = document.querySelector("#profile-button");
-const userAvatar = document.querySelector(".user-pill .avatar");
-const profileRoleValue = document.querySelector("#profile-role-value");
-const profileRoleDescription = document.querySelector("#profile-role-description");
-const profilePermissions = document.querySelector("#profile-permissions");
-const logoutButton = document.querySelector("#logout-button");
-
-function updateProfileView() {
-  const label = roleLabels[currentRole] || "Visitante";
-  userRoleLabel.textContent = currentUser?.nome || label;
-  if (userAvatar) {
-    userAvatar.textContent = getInitials(currentUser?.nome);
+  if (!loginForm || !loginButton) {
+    return;
   }
-  profileRoleValue.textContent = label;
-  profileRoleDescription.textContent = currentUser
-    ? `Acesso ativo como ${label} (${currentUser.email}) no sistema Pão de Mel & Cia.`
-    : `Acesso ativo como ${label} no sistema Pão de Mel & Cia.`;
-  profilePermissions.innerHTML = "";
 
-  const permissions = currentUser?.permissoes || rolePermissions[currentRole] || ["Faça login para visualizar permissões"];
-  permissions.forEach((permission) => {
-    const tag = document.createElement("span");
-    tag.textContent = permission;
-    profilePermissions.appendChild(tag);
-  });
-}
-
-loginButton.addEventListener("click", async () => {
   if (!loginForm.reportValidity()) {
     return;
   }
@@ -172,36 +224,137 @@ loginButton.addEventListener("click", async () => {
   } finally {
     loginButton.disabled = false;
   }
+}
+
+async function handleRegister(event) {
+  event?.preventDefault();
+
+  if (!registerForm || !createAccountButton) {
+    return;
+  }
+
+  if (!registerForm.reportValidity()) {
+    return;
+  }
+
+  const registerData = new FormData(registerForm);
+  const codigoInterno = registerData.get("codigoInterno");
+  createAccountButton.disabled = true;
+
+  try {
+    const auth = await apiRequest("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify({
+        nome: registerData.get("nome"),
+        telefone: registerData.get("telefone"),
+        email: registerData.get("email"),
+        perfil: registerData.get("perfil"),
+        senha: registerData.get("senha"),
+        confirmarSenha: registerData.get("confirmarSenha"),
+        codigoInterno: codigoInterno || null
+      })
+    });
+    registerForm.reset();
+    toggleEmployeeField();
+    applyAuthState(auth);
+    showToast(`Cadastro criado. Bem-vindo, ${auth.nome}.`);
+    showScreen("dashboard");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    createAccountButton.disabled = false;
+  }
+}
+
+function toggleEmployeeField() {
+  const registerProfile = document.querySelector("#register-profile");
+  const employeeField = document.querySelector(".employee-field");
+
+  if (!registerProfile || !employeeField) {
+    return;
+  }
+
+  const isEmployee = ["GERENTE", "ATENDENTE", "CONFEITEIRO"].includes(registerProfile.value);
+  employeeField.classList.toggle("visible", isEmployee);
+  const input = employeeField.querySelector("input");
+  if (input) {
+    input.required = isEmployee;
+  }
+}
+
+function restoreSession() {
+  try {
+    const storedAuth = localStorage.getItem("paodemel-auth");
+    if (!storedAuth) {
+      return false;
+    }
+
+    applyAuthState(JSON.parse(storedAuth), false);
+    showScreen("dashboard");
+    return true;
+  } catch (error) {
+    localStorage.removeItem("paodemel-auth");
+    return false;
+  }
+}
+
+navItems.forEach((item) => {
+  item.addEventListener("click", () => showScreen(item.dataset.screen));
 });
 
-profileButton.addEventListener("click", () => showScreen("profile"));
+document.querySelectorAll("[data-screen-link]").forEach((button) => {
+  button.addEventListener("click", (event) => {
+    event.preventDefault();
+    showScreen(button.dataset.screenLink);
+  });
+});
 
-logoutButton.addEventListener("click", () => {
-  isAuthenticated = false;
-  currentRole = null;
-  currentUser = null;
-  localStorage.removeItem("paodemel-auth");
-  document.body.classList.remove("authenticated", "role-gerente", "role-atendente", "role-confeiteiro", "role-cliente");
-  updateProfileView();
-  showToast("Sessão encerrada com segurança.");
+if (loginButton) {
+  loginButton.addEventListener("click", handleLogin);
+}
+
+if (loginForm) {
+  loginForm.addEventListener("submit", handleLogin);
+}
+
+if (createAccountButton) {
+  createAccountButton.addEventListener("click", handleRegister);
+}
+
+if (registerForm) {
+  registerForm.addEventListener("submit", handleRegister);
+}
+
+if (profileButton) {
+  profileButton.addEventListener("click", () => showScreen("profile"));
+}
+
+if (logoutButton) {
+  logoutButton.addEventListener("click", () => {
+    clearAuthState();
+    showToast("Sessão encerrada com segurança.");
+    showScreen("login");
+  });
+}
+
+const registerProfile = document.querySelector("#register-profile");
+if (registerProfile) {
+  registerProfile.addEventListener("change", toggleEmployeeField);
+  toggleEmployeeField();
+}
+
+if (!restoreSession()) {
+  clearAuthState();
   showScreen("login");
-});
-
-try {
-  const storedAuth = localStorage.getItem("paodemel-auth");
-  applyAuthState(storedAuth ? JSON.parse(storedAuth) : demoAuth, false);
-  showScreen("dashboard");
-} catch (error) {
-  applyAuthState(demoAuth, false);
-  showScreen("dashboard");
 }
 
 const themeToggle = document.querySelector("#theme-toggle");
-
-themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("dark");
-  themeToggle.textContent = document.body.classList.contains("dark") ? "Light mode" : "Dark mode";
-});
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    document.body.classList.toggle("dark");
+    themeToggle.textContent = document.body.classList.contains("dark") ? "Light mode" : "Dark mode";
+  });
+}
 
 let currentWizardStep = 1;
 const wizardSteps = document.querySelectorAll(".wizard-step");
@@ -220,26 +373,36 @@ function setWizardStep(step) {
     content.classList.toggle("active", Number(content.dataset.stepContent) === currentWizardStep);
   });
 
-  wizardPrev.disabled = currentWizardStep === 1;
-  wizardNext.textContent = currentWizardStep === 3 ? "Salvar encomenda" : "Continuar";
+  if (wizardPrev) {
+    wizardPrev.disabled = currentWizardStep === 1;
+  }
+  if (wizardNext) {
+    wizardNext.textContent = currentWizardStep === 3 ? "Salvar encomenda" : "Continuar";
+  }
 }
 
-wizardSteps.forEach((button) => {
-  button.addEventListener("click", () => setWizardStep(Number(button.dataset.step)));
-});
+if (wizardSteps.length) {
+  wizardSteps.forEach((button) => {
+    button.addEventListener("click", () => setWizardStep(Number(button.dataset.step)));
+  });
+}
 
-wizardNext.addEventListener("click", () => {
-  if (currentWizardStep === 3) {
-    showToast("Encomenda criada e enviada para produção.");
-    showScreen("orders");
-    return;
-  }
+if (wizardNext) {
+  wizardNext.addEventListener("click", () => {
+    if (currentWizardStep === 3) {
+      showToast("Encomenda criada e enviada para produção.");
+      showScreen("orders");
+      return;
+    }
 
-  setWizardStep(currentWizardStep + 1);
-});
+    setWizardStep(currentWizardStep + 1);
+  });
+}
 
-wizardPrev.addEventListener("click", () => setWizardStep(currentWizardStep - 1));
-setWizardStep(1);
+if (wizardPrev) {
+  wizardPrev.addEventListener("click", () => setWizardStep(currentWizardStep - 1));
+  setWizardStep(1);
+}
 
 let draggedCard = null;
 
@@ -281,88 +444,49 @@ const modalClose = document.querySelector("#modal-close");
 const modalOk = document.querySelector("#modal-ok");
 
 function openModal() {
+  if (!stockModal) {
+    return;
+  }
+
   stockModal.classList.add("active");
   stockModal.setAttribute("aria-hidden", "false");
 }
 
 function closeModal() {
+  if (!stockModal) {
+    return;
+  }
+
   stockModal.classList.remove("active");
   stockModal.setAttribute("aria-hidden", "true");
 }
 
-lowStockProduct.addEventListener("click", openModal);
-modalClose.addEventListener("click", closeModal);
-modalOk.addEventListener("click", closeModal);
-
-stockModal.addEventListener("click", (event) => {
-  if (event.target === stockModal) {
-    closeModal();
-  }
-});
-
-const toast = document.querySelector("#toast");
-let toastTimeout;
-
-function showToast(message) {
-  clearTimeout(toastTimeout);
-  toast.textContent = message;
-  toast.classList.add("active");
-
-  toastTimeout = setTimeout(() => {
-    toast.classList.remove("active");
-  }, 2800);
+if (lowStockProduct) {
+  lowStockProduct.addEventListener("click", openModal);
 }
 
-document.querySelector("#batch-button").addEventListener("click", () => {
-  showToast("Fornada registrada. Estoque atualizado automaticamente.");
-});
-
-const registerProfile = document.querySelector("#register-profile");
-const employeeField = document.querySelector(".employee-field");
-const createAccountButton = document.querySelector("#create-account-button");
-const registerForm = document.querySelector("#register-form");
-
-function toggleEmployeeField() {
-  const isEmployee = ["GERENTE", "ATENDENTE", "CONFEITEIRO"].includes(registerProfile.value);
-  employeeField.classList.toggle("visible", isEmployee);
-  employeeField.querySelector("input").required = isEmployee;
+if (modalClose) {
+  modalClose.addEventListener("click", closeModal);
 }
 
-registerProfile.addEventListener("change", toggleEmployeeField);
-toggleEmployeeField();
+if (modalOk) {
+  modalOk.addEventListener("click", closeModal);
+}
 
-createAccountButton.addEventListener("click", async () => {
-  if (!registerForm.reportValidity()) {
-    return;
-  }
+if (stockModal) {
+  stockModal.addEventListener("click", (event) => {
+    if (event.target === stockModal) {
+      closeModal();
+    }
+  });
+}
 
-  const registerData = new FormData(registerForm);
-  const codigoInterno = registerData.get("codigoInterno");
-  createAccountButton.disabled = true;
-
-  try {
-    await apiRequest("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({
-        nome: registerData.get("nome"),
-        telefone: registerData.get("telefone"),
-        email: registerData.get("email"),
-        perfil: registerData.get("perfil"),
-        senha: registerData.get("senha"),
-        confirmarSenha: registerData.get("confirmarSenha"),
-        codigoInterno: codigoInterno || null
-      })
-    });
-    registerForm.reset();
-    toggleEmployeeField();
-    showToast("Cadastro criado com sucesso. Faça login para continuar.");
-    showScreen("login");
-  } catch (error) {
-    showToast(error.message);
-  } finally {
-    createAccountButton.disabled = false;
-  }
-});
+const batchButton = document.querySelector("#batch-button");
+if (batchButton) {
+  batchButton.addEventListener("click", () => {
+    showToast("Fornada registrada. Estoque atualizado automaticamente.");
+  });
+}
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
