@@ -49,6 +49,18 @@ const profileRoleDescription = document.querySelector("#profile-role-description
 const profilePermissions = document.querySelector("#profile-permissions");
 const logoutButton = document.querySelector("#logout-button");
 const toast = document.querySelector("#toast");
+const authFeedbackItems = document.querySelectorAll(".auth-feedback");
+
+function setAuthFeedback(message, type = "info") {
+  if (!authFeedbackItems.length) {
+    return;
+  }
+
+  authFeedbackItems.forEach((authFeedback) => {
+    authFeedback.textContent = message;
+    authFeedback.className = `auth-feedback ${type}`;
+  });
+}
 
 function showToast(message) {
   if (!toast) {
@@ -62,6 +74,22 @@ function showToast(message) {
   toastTimeout = setTimeout(() => {
     toast.classList.remove("active");
   }, 2800);
+}
+
+function safeSetSession(auth) {
+  try {
+    localStorage.setItem("paodemel-auth", JSON.stringify(auth));
+  } catch (error) {
+    // A sessão segue funcionando mesmo se o navegador bloquear localStorage.
+  }
+}
+
+function safeRemoveSession() {
+  try {
+    localStorage.removeItem("paodemel-auth");
+  } catch (error) {
+    // Ignora bloqueio de armazenamento local.
+  }
 }
 
 async function apiRequest(path, options = {}) {
@@ -136,7 +164,7 @@ function applyAuthState(auth, persistSession = true) {
   document.body.classList.add("authenticated", `role-${currentRole.toLowerCase()}`);
 
   if (persistSession) {
-    localStorage.setItem("paodemel-auth", JSON.stringify(auth));
+    safeSetSession(auth);
   }
 
   updateProfileView();
@@ -146,7 +174,7 @@ function clearAuthState() {
   isAuthenticated = false;
   currentRole = null;
   currentUser = null;
-  localStorage.removeItem("paodemel-auth");
+  safeRemoveSession();
   document.body.classList.remove("authenticated", "role-gerente", "role-atendente", "role-confeiteiro", "role-cliente");
   updateProfileView();
 }
@@ -200,12 +228,19 @@ async function handleLogin(event) {
     return;
   }
 
+  if (loginButton.disabled) {
+    return;
+  }
+
   if (!loginForm.reportValidity()) {
     return;
   }
 
   const loginData = new FormData(loginForm);
+  setAuthFeedback("Verificando login...", "info");
+  showToast("Verificando login...");
   loginButton.disabled = true;
+  loginButton.textContent = "Entrando...";
 
   try {
     const auth = await apiRequest("/api/auth/login", {
@@ -217,12 +252,15 @@ async function handleLogin(event) {
       })
     });
     applyAuthState(auth);
+    setAuthFeedback("Login realizado com sucesso.", "success");
     showToast(`Bem-vindo, ${auth.nome}.`);
     showScreen("dashboard");
   } catch (error) {
+    setAuthFeedback(error.message, "error");
     showToast(error.message);
   } finally {
     loginButton.disabled = false;
+    loginButton.textContent = "Entrar";
   }
 }
 
@@ -233,13 +271,20 @@ async function handleRegister(event) {
     return;
   }
 
+  if (createAccountButton.disabled) {
+    return;
+  }
+
   if (!registerForm.reportValidity()) {
     return;
   }
 
   const registerData = new FormData(registerForm);
   const codigoInterno = registerData.get("codigoInterno");
+  setAuthFeedback("Criando cadastro...", "info");
+  showToast("Criando cadastro...");
   createAccountButton.disabled = true;
+  createAccountButton.textContent = "Criando...";
 
   try {
     const auth = await apiRequest("/api/auth/register", {
@@ -257,12 +302,15 @@ async function handleRegister(event) {
     registerForm.reset();
     toggleEmployeeField();
     applyAuthState(auth);
+    setAuthFeedback("Cadastro criado e salvo no banco de dados.", "success");
     showToast(`Cadastro criado. Bem-vindo, ${auth.nome}.`);
     showScreen("dashboard");
   } catch (error) {
+    setAuthFeedback(error.message, "error");
     showToast(error.message);
   } finally {
     createAccountButton.disabled = false;
+    createAccountButton.textContent = "Criar cadastro";
   }
 }
 
@@ -293,7 +341,7 @@ function restoreSession() {
     showScreen("dashboard");
     return true;
   } catch (error) {
-    localStorage.removeItem("paodemel-auth");
+    safeRemoveSession();
     return false;
   }
 }
@@ -311,6 +359,7 @@ document.querySelectorAll("[data-screen-link]").forEach((button) => {
 
 if (loginButton) {
   loginButton.addEventListener("click", handleLogin);
+  window.paodemelLogin = handleLogin;
 }
 
 if (loginForm) {
@@ -319,6 +368,7 @@ if (loginForm) {
 
 if (createAccountButton) {
   createAccountButton.addEventListener("click", handleRegister);
+  window.paodemelRegister = handleRegister;
 }
 
 if (registerForm) {
