@@ -48,12 +48,47 @@ public class OperationsController {
     );
   }
 
+  @GetMapping("/fornadas")
+  public List<Map<String, Object>> listarFornadas() {
+    return fornadaRepository.findAll().stream()
+        .sorted((left, right) -> Long.compare(right.getId(), left.getId()))
+        .map(fornada -> Map.<String, Object>of(
+            "tipoPao", fornada.getTipoPao(),
+            "quantidadeProduzida", fornada.getQuantidadeProduzida(),
+            "horaSaida", fornada.getHoraSaida()
+        ))
+        .toList();
+  }
+
   @PostMapping("/fornadas")
   public Map<String, Object> registrarFornada(@RequestBody Map<String, Object> request) {
+    String tipoPao = String.valueOf(request.getOrDefault("tipoPao", "")).trim();
+    int quantidadeProduzida;
+
+    try {
+      quantidadeProduzida = Integer.parseInt(String.valueOf(request.getOrDefault("quantidadeProduzida", 0)));
+    } catch (NumberFormatException exception) {
+      throw new IllegalArgumentException("Informe uma quantidade produzida valida.");
+    }
+
+    String horaSaida = String.valueOf(request.getOrDefault("horaSaida", "")).trim();
+
+    if (tipoPao.isEmpty()) {
+      throw new IllegalArgumentException("Informe o tipo de pao.");
+    }
+
+    if (quantidadeProduzida <= 0) {
+      throw new IllegalArgumentException("Informe uma quantidade produzida maior que zero.");
+    }
+
+    if (horaSaida.isEmpty()) {
+      throw new IllegalArgumentException("Informe a hora de saida da fornada.");
+    }
+
     Fornada fornada = fornadaRepository.save(new Fornada(
-        String.valueOf(request.getOrDefault("tipoPao", "Pao frances")),
-        Integer.parseInt(String.valueOf(request.getOrDefault("quantidadeProduzida", 0))),
-        String.valueOf(request.getOrDefault("horaSaida", "08:00"))
+        tipoPao,
+        quantidadeProduzida,
+        horaSaida
     ));
 
     return Map.of(

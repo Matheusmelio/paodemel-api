@@ -116,6 +116,14 @@ function buildApiUrl(path) {
   return new URL(path, window.location.origin).toString();
 }
 
+function getAuthHeaders() {
+  if (!currentRole) {
+    return {};
+  }
+
+  return { "X-Perfil": currentRole };
+}
+
 async function apiRequest(path, options = {}) {
   let response;
 
@@ -267,7 +275,307 @@ function showScreen(screenId) {
     breadcrumbCurrent.textContent = title.replace("Gestão de ", "");
   }
 
+  if (screenId === "orders") {
+    loadOrders();
+  }
+
+  if (screenId === "batches") {
+    loadFornadas();
+  }
+
+  if (screenId === "new-order") {
+    prepareNewOrderForm();
+  }
+
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function statusBadgeClass(status) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (normalized.includes("producao") && !normalized.includes("aguardando")) {
+    return "production";
+  }
+
+  if (normalized.includes("pronto")) {
+    return "ready";
+  }
+
+  if (normalized.includes("entregue")) {
+    return "delivered";
+  }
+
+  return "waiting";
+}
+
+function formatStatusLabel(status) {
+  const labels = {
+    "Aguardando Producao": "Aguardando Produção",
+    "Em Producao": "Em Produção",
+    Pronto: "Pronto",
+    Entregue: "Entregue",
+    Cancelado: "Cancelado"
+  };
+
+  return labels[status] || status || "Aguardando Produção";
+}
+
+async function loadOrders() {
+  const tbody = document.querySelector("#orders-table-body");
+
+  if (!tbody || !isAuthenticated) {
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="6">Carregando encomendas...</td></tr>';
+
+  try {
+    const orders = await apiRequest("/api/encomendas", {
+      headers: getAuthHeaders()
+    });
+
+    if (!Array.isArray(orders) || orders.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6">Nenhuma encomenda cadastrada.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = "";
+
+    orders.forEach((order) => {
+      const row = document.createElement("tr");
+      const badgeClass = statusBadgeClass(order.status);
+      const statusLabel = formatStatusLabel(order.status);
+
+      row.innerHTML = `
+        <td>${order.codigo || "-"}</td>
+        <td>${order.cliente || "-"}</td>
+        <td>${order.massa || "-"}</td>
+        <td>${order.recheio || "-"}</td>
+        <td>${order.dataEntrega || "-"}</td>
+        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+      `;
+
+      tbody.appendChild(row);
+    });
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="6">Nao foi possivel carregar as encomendas.</td></tr>';
+    showToast(error.message);
+  }
+}
+
+async function loadFornadas() {
+  const list = document.querySelector("#batches-list");
+
+  if (!list || !isAuthenticated) {
+    return;
+  }
+
+  list.innerHTML = '<div><span>Carregando fornadas...</span><strong></strong></div>';
+
+  try {
+    const fornadas = await apiRequest("/api/fornadas", {
+      headers: getAuthHeaders()
+    });
+
+    if (!Array.isArray(fornadas) || fornadas.length === 0) {
+      list.innerHTML = '<div><span>Nenhuma fornada registrada.</span><strong></strong></div>';
+      return;
+    }
+
+    list.innerHTML = "";
+
+    fornadas.forEach((fornada) => {
+      const item = document.createElement("div");
+      item.innerHTML = `<span>${fornada.tipoPao || "Pao"}</span><strong>${fornada.quantidadeProduzida || 0} un. · ${fornada.horaSaida || "--:--"}</strong>`;
+      list.appendChild(item);
+    });
+  } catch (error) {
+    list.innerHTML = '<div><span>Nao foi possivel carregar as fornadas.</span><strong></strong></div>';
+    showToast(error.message);
+  }
+}
+
+function prepareNewOrderForm() {
+  const clienteInput = document.querySelector("#order-cliente-nome");
+
+  if (clienteInput && currentUser?.nome && !clienteInput.value.trim()) {
+    clienteInput.value = currentUser.nome;
+  }
+
+  const dateInput = document.querySelector("#order-data-entrega");
+
+  if (dateInput && !dateInput.value) {
+    const deliveryDate = new Date();
+    deliveryDate.setDate(deliveryDate.getDate() + 2);
+    dateInput.value = deliveryDate.toISOString().slice(0, 10);
+  }
+}
+
+function getOrderFormData() {
+  const cliente = String(document.querySelector("#order-cliente-nome")?.value || "").trim()
+    || String(currentUser?.nome || "").trim();
+  const massa = String(document.querySelector("#order-massa")?.value || "").trim();
+  const recheio = String(document.querySelector("#order-recheio")?.value || "").trim();
+  const data = String(document.querySelector("#order-data-entrega")?.value || "").trim();
+  const hora = String(document.querySelector("#order-hora-entrega")?.value || "15:00").trim();
+
+  return {
+    cliente,
+    massa,
+    recheio,
+    dataEntrega: data && hora ? `${data} ${hora}` : data
+  };
+}
+
+function validateWizardStep(step) {
+  if (step === 1) {
+    const cliente = String(document.querySelector("#order-cliente-nome")?.value || "").trim()
+      || String(currentUser?.nome || "").trim();
+
+    if (!cliente) {
+      showToast("Informe o nome do cliente.");
+      return false;
+    }
+  }
+
+  if (step === 2) {
+    const massa = String(document.querySelector("#order-massa")?.value || "").trim();
+    const recheio = String(document.querySelector("#order-recheio")?.value || "").trim();
+
+    if (!massa || !recheio) {
+      showToast("Selecione massa e recheio.");
+      return false;
+    }
+  }
+
+  if (step === 3) {
+    const data = String(document.querySelector("#order-data-entrega")?.value || "").trim();
+    const hora = String(document.querySelector("#order-hora-entrega")?.value || "").trim();
+
+    if (!data || !hora) {
+      showToast("Informe data e hora de entrega.");
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function resetWizardForm() {
+  const clienteInput = document.querySelector("#order-cliente-nome");
+  const telefoneInput = document.querySelector("#order-cliente-telefone");
+  const whatsappInput = document.querySelector("#order-cliente-whatsapp");
+  const dateInput = document.querySelector("#order-data-entrega");
+  const horaInput = document.querySelector("#order-hora-entrega");
+
+  if (clienteInput) {
+    clienteInput.value = currentUser?.nome || "";
+  }
+
+  if (telefoneInput) {
+    telefoneInput.value = "";
+  }
+
+  if (whatsappInput) {
+    whatsappInput.value = "";
+  }
+
+  if (dateInput) {
+    dateInput.value = "";
+  }
+
+  if (horaInput) {
+    horaInput.value = "15:00";
+  }
+
+  setWizardStep(1);
+}
+
+async function saveOrder() {
+  if (!validateWizardStep(3)) {
+    return;
+  }
+
+  const payload = getOrderFormData();
+
+  if (!payload.cliente || !payload.massa || !payload.recheio || !payload.dataEntrega) {
+    showToast("Preencha cliente, massa, recheio e data de entrega.");
+    return;
+  }
+
+  if (wizardNext) {
+    wizardNext.disabled = true;
+    wizardNext.textContent = "Salvando...";
+  }
+
+  try {
+    const created = await apiRequest("/api/encomendas", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    showToast(`Encomenda ${created.codigo || ""} criada e enviada para produção.`.trim());
+    resetWizardForm();
+    await loadOrders();
+    showScreen("orders");
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    if (wizardNext) {
+      wizardNext.disabled = false;
+      wizardNext.textContent = "Salvar encomenda";
+    }
+  }
+}
+
+async function registerFornada() {
+  const button = document.querySelector("#batch-button");
+  const tipoPao = String(document.querySelector("#batch-tipo-pao")?.value || "").trim();
+  const quantidade = Number(document.querySelector("#batch-quantidade")?.value);
+  const horaSaida = String(document.querySelector("#batch-hora-saida")?.value || "").trim();
+
+  if (!tipoPao) {
+    showToast("Selecione o tipo de pao.");
+    return;
+  }
+
+  if (!Number.isFinite(quantidade) || quantidade <= 0) {
+    showToast("Informe uma quantidade produzida maior que zero.");
+    return;
+  }
+
+  if (!horaSaida) {
+    showToast("Informe a hora de saida da fornada.");
+    return;
+  }
+
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Registrando...";
+  }
+
+  try {
+    const response = await apiRequest("/api/fornadas", {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        tipoPao,
+        quantidadeProduzida: quantidade,
+        horaSaida
+      })
+    });
+
+    showToast(response.mensagem || "Fornada registrada. Estoque atualizado automaticamente.");
+    await loadFornadas();
+  } catch (error) {
+    showToast(error.message);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = "Registrar Fornada";
+    }
+  }
 }
 
 async function handleLogin(event) {
@@ -551,10 +859,13 @@ if (wizardSteps.length) {
 }
 
 if (wizardNext) {
-  wizardNext.addEventListener("click", () => {
+  wizardNext.addEventListener("click", async () => {
     if (currentWizardStep === 3) {
-      showToast("Encomenda criada e enviada para produção.");
-      showScreen("orders");
+      await saveOrder();
+      return;
+    }
+
+    if (!validateWizardStep(currentWizardStep)) {
       return;
     }
 
@@ -646,9 +957,7 @@ if (stockModal) {
 
 const batchButton = document.querySelector("#batch-button");
 if (batchButton) {
-  batchButton.addEventListener("click", () => {
-    showToast("Fornada registrada. Estoque atualizado automaticamente.");
-  });
+  batchButton.addEventListener("click", registerFornada);
 }
 
 document.addEventListener("keydown", (event) => {

@@ -1,6 +1,7 @@
 package com.paodemel.api.common;
 
 import com.paodemel.api.auth.AccessDeniedException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -16,6 +17,12 @@ public class ApiExceptionHandler {
   @ResponseStatus(HttpStatus.FORBIDDEN)
   public ApiError handleAccessDenied(AccessDeniedException exception) {
     return new ApiError(HttpStatus.FORBIDDEN.value(), exception.getMessage());
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ApiError handleDataIntegrity(DataIntegrityViolationException exception) {
+    return new ApiError(HttpStatus.BAD_REQUEST.value(), "Nao foi possivel salvar os dados. Verifique se o registro ja existe ou se os campos estao corretos.");
   }
 
   @ExceptionHandler(IllegalArgumentException.class)

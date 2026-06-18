@@ -27,6 +27,10 @@ public class Fornada {
     this.horaSaida = horaSaida;
   }
 
+  public Long getId() {
+    return id;
+  }
+
   public String getTipoPao() {
     return tipoPao;
   }

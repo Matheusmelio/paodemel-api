@@ -264,11 +264,8 @@
         <article class="panel table-panel">
           <table>
             <thead><tr><th>Código</th><th>Cliente</th><th>Massa</th><th>Recheio</th><th>Data de entrega</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td>#PM-1048</td><td>Ana Clara</td><td>Chocolate</td><td>Ninho com morango</td><td>Hoje, 15:00</td><td><span class="badge waiting">Aguardando Produção</span></td></tr>
-              <tr><td>#PM-1049</td><td>Roberto Lima</td><td>Baunilha</td><td>Doce de leite</td><td>Hoje, 17:30</td><td><span class="badge production">Em Produção</span></td></tr>
-              <tr><td>#PM-1050</td><td>Marina Souza</td><td>Red velvet</td><td>Cream cheese</td><td>Amanhã, 10:00</td><td><span class="badge ready">Pronto</span></td></tr>
-              <tr><td>#PM-1051</td><td>Casa Nova</td><td>Cenoura</td><td>Brigadeiro</td><td>Ontem, 18:00</td><td><span class="badge delivered">Entregue</span></td></tr>
+            <tbody id="orders-table-body">
+              <tr><td colspan="6">Carregando encomendas...</td></tr>
             </tbody>
           </table>
         </article>
@@ -285,17 +282,17 @@
           <div class="wizard-content active" data-step-content="1">
             <h2>Dados do Cliente</h2>
             <div class="form-grid">
-              <label>Nome<input type="text" placeholder="Nome completo"></label>
-              <label>Telefone<input type="tel" placeholder="(11) 99999-0000"></label>
-              <label>WhatsApp<input type="tel" placeholder="(11) 99999-0000"></label>
+              <label>Nome<input id="order-cliente-nome" name="cliente" type="text" placeholder="Nome completo" required></label>
+              <label>Telefone<input id="order-cliente-telefone" name="telefone" type="tel" placeholder="(11) 99999-0000"></label>
+              <label>WhatsApp<input id="order-cliente-whatsapp" name="whatsapp" type="tel" placeholder="(11) 99999-0000"></label>
             </div>
           </div>
 
           <div class="wizard-content" data-step-content="2">
             <h2>Configuração do Bolo</h2>
             <div class="form-grid">
-              <label>Massa<select><option>Chocolate</option><option>Baunilha</option><option>Red velvet</option></select></label>
-              <label>Recheio<select><option>Ninho com morango</option><option>Doce de leite</option><option>Brigadeiro belga</option></select></label>
+              <label>Massa<select id="order-massa" name="massa" required><option>Chocolate</option><option>Baunilha</option><option>Red velvet</option></select></label>
+              <label>Recheio<select id="order-recheio" name="recheio" required><option>Ninho com morango</option><option>Doce de leite</option><option>Brigadeiro belga</option></select></label>
               <label>Cobertura<select><option>Ganache</option><option>Chantininho</option><option>Buttercream</option></select></label>
               <label>Peso<select><option>1 kg</option><option>2 kg</option><option>3 kg</option></select></label>
               <label class="span-2">Observações<textarea placeholder="Tema, cores, mensagem e restrições alimentares"></textarea></label>
@@ -305,15 +302,15 @@
           <div class="wizard-content" data-step-content="3">
             <h2>Entrega</h2>
             <div class="form-grid">
-              <label>Data<input type="date" class="invalid-date"></label>
-              <label>Hora de retirada<input type="time" value="15:00"></label>
+              <label>Data<input id="order-data-entrega" name="dataEntrega" type="date" required></label>
+              <label>Hora de retirada<input id="order-hora-entrega" name="horaEntrega" type="time" value="15:00" required></label>
             </div>
             <div class="friendly-message">Escolha uma data com pelo menos 48h de antecedência. Feriados aparecem bloqueados no calendário.</div>
           </div>
 
           <div class="wizard-actions">
             <button class="ghost-button" id="wizard-prev">Voltar</button>
-            <button class="primary-button" id="wizard-next">Continuar</button>
+            <button class="primary-button" type="button" id="wizard-next">Continuar</button>
           </div>
         </article>
       </section>
@@ -333,19 +330,16 @@
           <article class="panel">
             <div class="panel-header"><div><span class="eyebrow">Fornada</span><h2>Registrar produção</h2></div></div>
             <div class="form-grid single">
-              <label>Tipo de pão<select><option>Pão francês</option><option>Brioche</option><option>Pão australiano</option></select></label>
-              <label>Quantidade produzida<input type="number" value="120"></label>
-              <label>Hora da saída<input type="time" value="08:30"></label>
-              <button class="primary-button" id="batch-button">Registrar Fornada</button>
+              <label>Tipo de pão<select id="batch-tipo-pao" name="tipoPao" required><option>Pão francês</option><option>Brioche</option><option>Pão australiano</option><option>Croissant</option><option>Pão de queijo</option></select></label>
+              <label>Quantidade produzida<input id="batch-quantidade" name="quantidadeProduzida" type="number" min="1" value="120" required></label>
+              <label>Hora da saída<input id="batch-hora-saida" name="horaSaida" type="time" value="08:30" required></label>
+              <button class="primary-button" type="button" id="batch-button">Registrar Fornada</button>
             </div>
           </article>
           <article class="panel">
-            <div class="panel-header"><div><span class="eyebrow">Disponibilidade</span><h2>Pães no balcão</h2></div></div>
-            <div class="availability-list">
-              <div><span>Pão francês</span><strong>184 un.</strong></div>
-              <div><span>Croissant</span><strong>36 un.</strong></div>
-              <div class="sold-out"><span>Brioche</span><strong>Produto Esgotado</strong></div>
-              <div><span>Pão de queijo</span><strong>52 un.</strong></div>
+            <div class="panel-header"><div><span class="eyebrow">Disponibilidade</span><h2>Fornadas registradas</h2></div></div>
+            <div class="availability-list" id="batches-list">
+              <div><span>Carregando fornadas...</span><strong></strong></div>
             </div>
           </article>
         </div>
@@ -511,6 +505,6 @@
   <div class="toast" id="toast">Fornada registrada. Estoque atualizado automaticamente.</div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="script.js?v=6"></script>
+  <script src="script.js?v=7"></script>
 </body>
 </html>
