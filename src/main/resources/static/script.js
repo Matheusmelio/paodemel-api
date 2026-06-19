@@ -275,12 +275,24 @@ function showScreen(screenId) {
     breadcrumbCurrent.textContent = title.replace("Gestão de ", "");
   }
 
+  if (screenId === "dashboard") {
+    loadDashboard();
+  }
+
   if (screenId === "orders") {
     loadOrders();
   }
 
   if (screenId === "batches") {
     loadFornadas();
+  }
+
+  if (screenId === "stock") {
+    loadEstoque();
+  }
+
+  if (screenId === "reports") {
+    loadRelatorios();
   }
 
   if (screenId === "new-order") {
@@ -318,6 +330,190 @@ function formatStatusLabel(status) {
   };
 
   return labels[status] || status || "Aguardando Produção";
+}
+
+function formatCurrency(value) {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) {
+    return "R$ 0,00";
+  }
+
+  return amount.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function stockStatusClass(status) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (normalized.includes("critico")) {
+    return "critical";
+  }
+
+  if (normalized.includes("atencao")) {
+    return "attention";
+  }
+
+  return "normal";
+}
+
+async function loadDashboard() {
+  if (!isAuthenticated) {
+    return;
+  }
+
+  const fields = {
+    encomendasHoje: document.querySelector("#kpi-encomendas-hoje"),
+    encomendasDetalhe: document.querySelector("#kpi-encomendas-detalhe"),
+    bolosProducao: document.querySelector("#kpi-bolos-producao"),
+    bolosDetalhe: document.querySelector("#kpi-bolos-detalhe"),
+    paesDisponiveis: document.querySelector("#kpi-paes-disponiveis"),
+    paesDetalhe: document.querySelector("#kpi-paes-detalhe"),
+    estoqueBaixo: document.querySelector("#kpi-estoque-baixo"),
+    estoqueDetalhe: document.querySelector("#kpi-estoque-detalhe"),
+    pedidosEntregues: document.querySelector("#kpi-pedidos-entregues"),
+    pedidosDetalhe: document.querySelector("#kpi-pedidos-detalhe")
+  };
+
+  try {
+    const data = await apiRequest("/api/dashboard", {
+      headers: getAuthHeaders()
+    });
+
+    const kpis = data.kpis || {};
+    const detalhes = data.detalhes || {};
+
+    if (fields.encomendasHoje) {
+      fields.encomendasHoje.textContent = kpis.encomendasHoje ?? 0;
+    }
+    if (fields.encomendasDetalhe) {
+      fields.encomendasDetalhe.textContent = `${detalhes.aguardandoProducao ?? 0} aguardando producao`;
+    }
+    if (fields.bolosProducao) {
+      fields.bolosProducao.textContent = kpis.bolosEmProducao ?? 0;
+    }
+    if (fields.bolosDetalhe) {
+      fields.bolosDetalhe.textContent = "Em producao agora";
+    }
+    if (fields.paesDisponiveis) {
+      fields.paesDisponiveis.textContent = kpis.paesDisponiveis ?? 0;
+    }
+    if (fields.paesDetalhe) {
+      fields.paesDetalhe.textContent = "Total das fornadas registradas";
+    }
+    if (fields.estoqueBaixo) {
+      fields.estoqueBaixo.textContent = kpis.estoqueBaixo ?? 0;
+    }
+    if (fields.estoqueDetalhe) {
+      fields.estoqueDetalhe.textContent = `${detalhes.itensCriticos ?? 0} itens criticos`;
+    }
+    if (fields.pedidosEntregues) {
+      fields.pedidosEntregues.textContent = kpis.pedidosEntregues ?? 0;
+    }
+    if (fields.pedidosDetalhe) {
+      fields.pedidosDetalhe.textContent = "Entregues no sistema";
+    }
+  } catch (error) {
+    if (fields.encomendasDetalhe) {
+      fields.encomendasDetalhe.textContent = "Nao foi possivel carregar";
+    }
+    showToast(error.message);
+  }
+}
+
+async function loadEstoque() {
+  const tbody = document.querySelector("#stock-table-body");
+
+  if (!tbody || !isAuthenticated) {
+    return;
+  }
+
+  tbody.innerHTML = '<tr><td colspan="5">Carregando estoque...</td></tr>';
+
+  try {
+    const items = await apiRequest("/api/estoque", {
+      headers: getAuthHeaders()
+    });
+
+    if (!Array.isArray(items) || items.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5">Nenhum insumo cadastrado.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = "";
+
+    items.forEach((item) => {
+      const row = document.createElement("tr");
+      const statusClass = stockStatusClass(item.status);
+
+      row.innerHTML = `
+        <td>${item.insumo || "-"}</td>
+        <td>${item.quantidadeAtual ?? "-"}</td>
+        <td>${item.unidade || "-"}</td>
+        <td>${item.estoqueMinimo ?? "-"}</td>
+        <td><span class="stock-status ${statusClass}">${item.status || "Normal"}</span></td>
+      `;
+
+      tbody.appendChild(row);
+    });
+  } catch (error) {
+    tbody.innerHTML = '<tr><td colspan="5">Nao foi possivel carregar o estoque.</td></tr>';
+    showToast(error.message);
+  }
+}
+
+async function loadRelatorios() {
+  if (!isAuthenticated || currentRole !== "GERENTE") {
+    return;
+  }
+
+  const receitaEl = document.querySelector("#report-receita");
+  const lucroEl = document.querySelector("#report-lucro");
+  const produtosEl = document.querySelector("#report-produtos");
+  const bolosEl = document.querySelector("#report-bolos");
+
+  if (receitaEl) {
+    receitaEl.textContent = "Carregando...";
+  }
+
+  try {
+    const data = await apiRequest("/api/relatorios", {
+      headers: getAuthHeaders()
+    });
+
+    if (receitaEl) {
+      receitaEl.textContent = formatCurrency(data.receita);
+    }
+    if (lucroEl) {
+      lucroEl.textContent = formatCurrency(data.lucro);
+    }
+    if (produtosEl) {
+      produtosEl.innerHTML = "";
+      (data.produtosMaisVendidos || []).forEach((produto) => {
+        const label = document.createElement("span");
+        label.textContent = produto;
+        const value = document.createElement("strong");
+        value.textContent = "-";
+        produtosEl.appendChild(label);
+        produtosEl.appendChild(value);
+      });
+    }
+    if (bolosEl) {
+      bolosEl.innerHTML = "";
+      (data.bolosMaisEncomendados || []).forEach((bolo) => {
+        const label = document.createElement("span");
+        label.textContent = bolo;
+        const value = document.createElement("strong");
+        value.textContent = "-";
+        bolosEl.appendChild(label);
+        bolosEl.appendChild(value);
+      });
+    }
+  } catch (error) {
+    if (receitaEl) {
+      receitaEl.textContent = "-";
+    }
+    showToast(error.message);
+  }
 }
 
 async function loadOrders() {
@@ -518,6 +714,7 @@ async function saveOrder() {
     showToast(`Encomenda ${created.codigo || ""} criada e enviada para produção.`.trim());
     resetWizardForm();
     await loadOrders();
+    await loadDashboard();
     showScreen("orders");
   } catch (error) {
     showToast(error.message);
@@ -568,6 +765,7 @@ async function registerFornada() {
 
     showToast(response.mensagem || "Fornada registrada. Estoque atualizado automaticamente.");
     await loadFornadas();
+    await loadDashboard();
   } catch (error) {
     showToast(error.message);
   } finally {

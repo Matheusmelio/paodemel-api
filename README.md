@@ -40,18 +40,51 @@ Na primeira execucao, o Hibernate cria/atualiza as tabelas automaticamente e a A
 
 ## Como executar
 
-```bash
+### Resumo rápido (computador local)
+
+| O quê | Onde |
+|-------|------|
+| Pasta para rodar o comando | `projetopass\api` |
+| Comando para iniciar | `mvn spring-boot:run` |
+| Endereço no navegador | **`http://localhost:8080`** |
+| Porta padrão | **`8080`** |
+
+### Passo a passo
+
+```powershell
 cd api
 mvn spring-boot:run
 ```
 
-A API sobe em:
+Quando o terminal mostrar que a aplicacao iniciou, abra no navegador:
 
 ```text
 http://localhost:8080
 ```
 
-O frontend do sistema fica embutido em `src/main/resources/static/` e é servido pela própria API na raiz (`/`). Login e cadastro ja chamam `/api/auth/login` e `/api/auth/register`.
+A porta e configurada em `src/main/resources/application.properties`:
+
+```properties
+server.port=${PORT:8080}
+```
+
+Ou seja: usa a porta **8080** por padrao. Para mudar (ex.: porta 9090):
+
+```powershell
+$env:PORT="9090"
+mvn spring-boot:run
+```
+
+Depois acesse `http://localhost:9090`.
+
+### Portas usadas no computador local
+
+| Servico | Porta | Endereco |
+|---------|-------|----------|
+| Sistema web + API (Spring Boot) | **8080** (padrao) | `http://localhost:8080` |
+| Banco PostgreSQL | **5432** (padrao) | `localhost:5432` — banco `Paoemel` |
+
+O frontend do sistema fica embutido em `src/main/resources/static/` e e servido pela propria API na raiz (`/`). Login e cadastro ja chamam `/api/auth/login` e `/api/auth/register`.
 
 ## Deploy unificado (Railway)
 
@@ -118,13 +151,29 @@ X-Perfil: GERENTE
 
 Se outro perfil tentar acessar, a API retorna `403`.
 
+## Estrutura do projeto
+
+```
+com.paodemel.api/
+├── controller/     # Rotas REST (@GetMapping, @PostMapping)
+├── service/        # Regras de negocio
+├── repository/     # Acesso ao banco (JPA)
+├── model/          # Entidades do banco
+├── dto/            # Objetos de entrada e saida da API
+├── exception/      # Tratamento de erros
+└── config/         # CORS, banco, dados iniciais
+```
+
+Guia para o usuario final: [`GUIA_DO_CLIENTE.md`](GUIA_DO_CLIENTE.md)
+
 ## Endpoints principais
 
-- `GET /api/dashboard`
+- `GET /api/dashboard` — KPIs do painel principal
 - `GET /api/encomendas`
 - `POST /api/encomendas`
-- `GET /api/producao`
+- `GET /api/fornadas`
 - `POST /api/fornadas`
+- `GET /api/producao`
 - `GET /api/estoque`
 - `POST /api/vendas`
 - `GET /api/perfil`
